@@ -1,36 +1,57 @@
 <template>
     <div class="content">
-      <v-card elevation="5" class="signup-card">
-        <v-card-title>
-          <h2>{{ title }}</h2>
-        </v-card-title>
-  
-        <v-card-text>
-          <p v-if="notification" :class="notification.msgType">{{ notification.msgBody }}</p>
-          <form @submit.prevent="onSubmit" v-if="!submitted">
-            <v-text-field
-              label="Username"
+      <div class="signup-card">
+        <h2>{{ title }}</h2>
+        <p v-if="notification" :class="notification.msgType">{{ notification.msgBody }}</p>
+        <form @submit.prevent="onSubmit" v-if="!submitted">
+          <label>
+            Username:
+            <input
+              type="text"
               v-model="form.username"
               required
-              :rules="[rules.required, rules.min(3), rules.max(64)]"
-            ></v-text-field>
-            <v-text-field
-              label="Password"
-              v-model="form.password"
+              :class="{ 'input-error': form.username.length < 3 || form.username.length > 64 }"
+            />
+          </label>
+          <label>
+            Password:
+            <input
               type="password"
+              v-model="form.password"
               required
-              :rules="[rules.required, rules.min(3), rules.max(32)]"
-            ></v-text-field>
-            <v-text-field label="First Name" v-model="form.firstname"></v-text-field>
-            <v-text-field label="Last Name" v-model="form.lastname"></v-text-field>
-            <v-text-field label="Email" v-model="form.email" type="email"></v-text-field>
+              :class="{ 'input-error': form.password.length < 3 || form.password.length > 32 }"
+            />
+          </label>
+          <label>
+            Confirm Password:
+            <input
+              type="password"
+              v-model="form.confirmPassword"
+              required
+              :class="{ 'input-error': form.confirmPassword !== form.password }"
+            />
+            <span v-if="form.confirmPassword && form.confirmPassword !== form.password" class="error-message">
+              Passwords do not match
+            </span>
+          </label>
+          <label>
+            First Name:
+            <input type="text" v-model="form.name" />
+          </label>
+          <label>
+            Last Name:
+            <input type="text" v-model="form.surname" />
+          </label>
+          <label>
+            Email:
+            <input type="email" v-model="form.email" />
+          </label>
   
-            <v-btn :disabled="!isFormValid" color="primary" type="submit">Sign up</v-btn>
-            <v-btn color="primary" @click="goBack">Go Back</v-btn>
-          </form>
-          <v-progress-circular v-if="submitted" indeterminate></v-progress-circular>
-        </v-card-text>
-      </v-card>
+          <button :disabled="!isFormValid" type="submit">Sign up</button>
+          <button type="button" @click="goBack">Go Back</button>
+        </form>
+        <div v-if="submitted" class="loading">Loading...</div>
+      </div>
     </div>
   </template>
   
@@ -49,21 +70,17 @@
       const form = ref({
         username: '',
         password: '',
-        firstname: '',
-        lastname: '',
+        confirmPassword: '',
+        name: '',
+        surname: '',
         email: '',
       });
-  
-      const rules = {
-        required: v => !!v || 'Field is required',
-        min: min => v => (v && v.length >= min) || `Min ${min} characters`,
-        max: max => v => (v && v.length <= max) || `Max ${max} characters`
-      };
   
       const isFormValid = computed(() => {
         return (
           form.value.username &&
           form.value.password &&
+          form.value.confirmPassword === form.value.password &&
           form.value.username.length >= 3 &&
           form.value.username.length <= 64 &&
           form.value.password.length >= 3 &&
@@ -75,14 +92,14 @@
         notification.value = null;
         submitted.value = true;
         try {
-          await axios.post('/auth/signup', form.value);
-          await axios.post('/auth/login', form.value);
-          router.push('/');
+            await axios.post('http://localhost:8080/auth/signup', form.value);
+         //   await axios.post('http://localhost:8080/auth/login', form.value);
+          router.push('/login');
         } catch (error) {
           submitted.value = false;
           notification.value = {
             msgType: 'error',
-            msgBody: error.response.data.message || 'Sign up error',
+            msgBody: error.response?.data?.message || 'Sign up error',
           };
         }
       };
@@ -96,7 +113,6 @@
         submitted,
         notification,
         form,
-        rules,
         isFormValid,
         onSubmit,
         goBack,
@@ -104,7 +120,5 @@
     },
   };
   </script>
-  
-  <style src="@/style/SignUp.css"></style>
 
-  
+ <style src="@/style/SignUp.css"></style>
