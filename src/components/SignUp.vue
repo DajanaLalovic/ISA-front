@@ -10,7 +10,7 @@
               type="text"
               v-model="form.username"
               required
-              :class="{ 'input-error': form.username.length < 3 || form.username.length > 64 }"
+              :class="{ 'input-error': form.username.length < 3 || form.username.length > 64 }" placeholder="Enter username"
             />
           </label>
           <label>
@@ -19,7 +19,7 @@
               type="password"
               v-model="form.password"
               required
-              :class="{ 'input-error': form.password.length < 3 || form.password.length > 32 }"
+              :class="{ 'input-error': form.password.length < 3 || form.password.length > 32 }" placeholder="Enter password"
             />
           </label>
           <label>
@@ -28,7 +28,7 @@
               type="password"
               v-model="form.confirmPassword"
               required
-              :class="{ 'input-error': form.confirmPassword !== form.password }"
+              :class="{ 'input-error': form.confirmPassword !== form.password }" placeholder="Enter password again"
             />
             <span v-if="form.confirmPassword && form.confirmPassword !== form.password" class="error-message">
               Passwords do not match
@@ -36,17 +36,45 @@
           </label>
           <label>
             First Name:
-            <input type="text" v-model="form.name" />
+            <input type="text" v-model="form.name" placeholder="Enter name"/>
           </label>
           <label>
             Last Name:
-            <input type="text" v-model="form.surname" />
+            <input type="text" v-model="form.surname" placeholder="Enter surname"/>
           </label>
           <label>
             Email:
-            <input type="email" v-model="form.email" />
+            <input type="email" v-model="form.email" placeholder="Enter email"/>
           </label>
-  
+
+
+
+
+          <div class="address-fields">
+          <label>
+            Street:
+            <input type="text" v-model="form.street" placeholder="Enter street" />
+          </label>
+          <label>
+            Number:
+            <input type="text" v-model="form.number" placeholder="Enter number" />
+          </label>
+        </div>
+        <div class="address-fields">
+          <label>
+            City:
+            <input type="text" v-model="form.city" placeholder="Enter city" />
+          </label>
+          <label>
+            Postal Code:
+            <input type="text" v-model="form.postalCode" placeholder="Enter postal code" />
+          </label>
+        </div>
+        <label>
+          Country:
+          <input type="text" v-model="form.country" placeholder="Enter country" />
+        </label>
+
           <button :disabled="!isFormValid" type="submit">Sign up</button>
           <button type="button" @click="goBack">Go Back</button>
         </form>

@@ -13,17 +13,20 @@ export default {
   },
   data() {
     return {
-     
+      
       isLoggedIn: false 
     };
   },
   created() {
     
-   // const user = localStorage.getItem("user"); 
-   /* if (user) {
+/*
+    localStorage.removeItem("user");
+    const user = localStorage.getItem("user"); 
+    if (user) {
       this.isLoggedIn = true;
     }*/
   }
+
 }
 </script>
 

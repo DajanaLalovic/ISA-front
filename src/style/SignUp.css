@@ -23,6 +23,20 @@
     border: 1px solid #ccc;
     border-radius: 4px;
   }
+  .address-fields {
+    display: flex;
+    gap: 10px; /* Razmak između input polja */
+    margin-bottom: 15px; /* Razmak između redova */
+  }
+  
+  .address-fields label {
+    flex: 1; /* Svaka oznaka (label) će uzeti isti prostor */
+  }
+  
+  .address-fields input {
+    flex: 2; /* Input polja su širih od oznaka */
+    max-width: 160px;
+  }
   
   button {
     padding: 10px 20px;

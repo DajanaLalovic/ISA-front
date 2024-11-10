@@ -1,78 +1,121 @@
 <template>
-    <div v-if="user" class="profile-container">
-      <h1>Profil korisnika</h1>
-      <div class="profile-info">
-        <p><strong>Ime:</strong> {{ user.name }}</p> <!-- Promenjeno iz firstName -->
-        <p><strong>Prezime:</strong> {{ user.surname }}</p> <!-- Promenjeno iz lastName -->
-        <p><strong>Korisničko ime:</strong> {{ user.username }}</p>
-        <p><strong>Email:</strong> {{ user.email }}</p>
-        <p><strong>Uloga:</strong> {{ user.role }}</p> <!-- Pretpostavljam da koristiš UserRole kao Enum -->
-        <p><strong>Aktivan:</strong> {{ user.active ? 'Da' : 'Ne' }}</p> <!-- Prikazivanje aktivnog statusa -->
+  <div v-if="user" class="profile-container">
+    <h1>User Profile</h1>
+    <div class="profile-info">
+      <div class="profile-item">
+        <strong>First Name:</strong> <span>{{ user.name }}</span>
+      </div>
+      <div class="profile-item">
+        <strong>Last Name:</strong> <span>{{ user.surname }}</span>
+      </div>
+      <div class="profile-item">
+        <strong>Username:</strong> <span>{{ user.username }}</span>
+      </div>
+      <div class="profile-item">
+        <strong>Email:</strong> <span>{{ user.email }}</span>
+      </div>
+      <div class="profile-item">
+        <strong>Role:</strong> <span>{{ user.role }}</span>
       </div>
     </div>
-    <div v-else>
-      <p>Učitavanje podataka o korisniku...</p>
-    </div>
-  </template>
-  
-  <script>
-  import axios from 'axios';
-  import { ref, onMounted } from 'vue';
-  import { useRoute } from 'vue-router';
-  
-  export default {
-    name: 'ProfileView',
-    setup() {
-      const user = ref(null);
-      const route = useRoute();
-      const userId = route.params.userId; // Preuzimanje userId iz URL-a
-  
-      // Funkcija za učitavanje korisnika sa servera
-      const fetchUserProfile = async () => {
-        try {
-          const response = await axios.get(`http://localhost:8080/api/profile/${userId}`, {
-           /* headers: {
-              Authorization: `Bearer ${localStorage.getItem('token')}` // Dodaj token ako je potrebno za autentifikaciju
-            }*/
-          });
-          user.value = response.data;
-        } catch (error) {
-          console.error('Greška prilikom učitavanja profila: ', error);
-        }
-      };
-  
-      // Poziva fetchUserProfile kada komponenta bude montirana
-      onMounted(() => {
-        fetchUserProfile();
-      });
-  
-      return {
-        user
-      };
-    }
-  };
-  </script>
-  
-  <style scoped>
-  .profile-container {
-    margin: 20px;
-    font-family: Arial, sans-serif;
+  </div>
+  <div v-else class="loading-message">
+    <p>Loading user data...</p>
+  </div>
+</template>
+
+<script>
+import axios from 'axios';
+import { ref, onMounted } from 'vue';
+import { useRoute } from 'vue-router';
+
+export default {
+  name: 'ProfileView',
+  setup() {
+    const user = ref(null);
+    const route = useRoute();
+    const userId = route.params.userId;
+
+    const fetchUserProfile = async () => {
+      try {
+        const response = await axios.get(`http://localhost:8080/api/profile/${userId}`, {
+          // Uncomment the line below if authentication token is required
+          // headers: { Authorization: `Bearer ${localStorage.getItem('token')}` }
+        });
+        user.value = response.data;
+      } catch (error) {
+        console.error('Error loading profile: ', error);
+      }
+    };
+
+    onMounted(() => {
+      fetchUserProfile();
+    });
+
+    return {
+      user
+    };
   }
-  
-  .profile-info {
-    border: 1px solid #ccc;
-    padding: 20px;
-    border-radius: 8px;
-    background-color: #f9f9f9;
-  }
-  
-  .profile-info p {
-    font-size: 18px;
-    margin-bottom: 10px;
-  }
-  
-  .profile-info strong {
-    font-weight: bold;
-  }
-  </style>
-  
+};
+</script>
+<style scoped>
+.profile-container {
+  margin-top: 7%;
+  margin-left: 27%;
+  max-width: 600px;
+ /* margin: 40px auto;*/
+  padding: 30px;
+  font-family: 'Arial', sans-serif;
+  color: #333;
+  background-color: #fff;
+  box-shadow: 0 4px 10px rgba(0, 0, 0, 0.1);
+  border-radius: 10px;
+}
+
+.profile-info {
+  border-top: 2px solid #d73ea9;
+  padding-top: 20px;
+  margin-top: 20px;
+}
+
+.profile-item {
+  display: flex;
+  align-items: baseline;
+  margin-bottom: 12px;
+  margin-left: 20%;
+}
+
+.profile-item strong {
+  width: 150px;
+  color: #d73ea9;
+  text-align: left;
+  font-weight: 600;
+  font-size: 18px;
+  font-family: 'Georgia', serif;
+  letter-spacing: 0.5px;
+}
+
+.profile-item span {
+  font-size: 18px;
+  color: #333;
+  font-family: 'Georgia', serif;
+  font-style: italic;
+  color: #444;
+}
+
+h1 {
+  font-family: 'Georgia', serif;
+  color: #d73ea9;
+  text-align: center;
+  font-size: 28px;
+  margin-bottom: 30px;
+}
+
+.loading-message {
+  text-align: center;
+  font-size: 18px;
+  margin-top: 50px;
+  color: #d73ea9;
+  font-family: 'Georgia', serif;
+}
+</style>
