@@ -1,18 +1,18 @@
 <template>
   <div class="content">
     <div class="post-card">
-      <h2>Dodaj novi post</h2>
+      <h2>Add new post</h2>
       <form @submit.prevent="onSubmitPost" v-if="!submitted">
         <label>
-          Opis objave:
+          Description:
           <textarea
             v-model="form.description"
             required
-            placeholder="Unesite opis"
+            placeholder="Write something about your post"
           ></textarea>
         </label>
         <label>
-          Izaberite sliku sa računara:
+          Choose photo:
           <input
             type="file"
             @change="onFileChange"
@@ -21,26 +21,26 @@
           />
         </label>
         <label>
-          Geografska širina:
+        Latitude:
           <input
             type="number" step="0.000001"
             v-model="form.latitude"
             required
-            placeholder="Unesite geografsku širinu"
+            placeholder="Latitude"
           />
         </label>
         <label>
-          Geografska dužina:
+          Longitude:
           <input
             type="number"
             v-model="form.longitude" step="0.000001"
             required
-            placeholder="Unesite geografsku dužinu"
+            placeholder="Longitude"
           />
         </label>
-        <button :disabled="!isFormValid" type="submit">Dodaj post</button>
+        <button :disabled="!isFormValid" type="submit">Add post</button>
       </form>
-      <div v-if="submitted" class="loading">Dodavanje u toku...</div>
+      <div v-if="submitted" class="loading">Loading...</div>
     </div>
   </div>
 </template>
@@ -57,13 +57,13 @@ export default {
       description: '',
       latitude: '',
       longitude: '',
-      imageBase64: '', // Skladištenje slike u Base64 formatu
+      imageBase64: '', 
     });
 
     const isFormValid = computed(() => {
       return (
         form.value.description &&
-        form.value.imageBase64 && // Proveri da li postoji slika u Base64 formatu
+        form.value.imageBase64 && 
         form.value.latitude &&
         form.value.longitude
       );
@@ -74,14 +74,14 @@ export default {
       if (file) {
         const reader = new FileReader();
         reader.onload = () => {
-          form.value.imageBase64 = reader.result.split(',')[1]; // Ukloni prefiks i sačuvaj Base64 podatke
+          form.value.imageBase64 = reader.result.split(',')[1]; 
         };
         reader.readAsDataURL(file);
       }
     };
 
     const onSubmitPost = async () => {
-      const token = localStorage.getItem('authToken'); // Učitaj token iz localStorage
+      const token = localStorage.getItem('authToken'); 
       console.log('Token:', token);
       try {
         await axios.post('http://localhost:8080/api/posts', form.value, {
