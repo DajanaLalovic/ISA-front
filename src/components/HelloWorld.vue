@@ -2,6 +2,7 @@
 <div class="links-container">
   <router-link to="/signup" class="link">Sign up</router-link>
   <router-link to="/login" class="link">Login</router-link>
+  <router-link to="/posts" class="link">AddPost</router-link>
 </div>
 <p>Hello</p>
 </template>

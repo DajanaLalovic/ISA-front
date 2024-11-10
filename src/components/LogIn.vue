@@ -62,41 +62,39 @@
         );
       });
   
-     /* const onSubmit = async () => {
-        notification.value = null;
-        submitted.value = true;
-        try {
-          await axios.post('http://localhost:8080/auth/login', form.value);
-          router.push('/'); // Preusmeri na stranicu nakon uspešnog logovanja
-        } catch (error) {
-          submitted.value = false;
-          notification.value = {
+    const onSubmit = async () => {
+    notification.value = null;
+    submitted.value = true;
+    try {
+        const response = await axios.post('http://localhost:8080/auth/login', form.value);
+        console.log("Odgovor servera:", response.data); // Dodaj ovu liniju za ispis odgovora
+
+        const token = response.data.accessToken; // Proveri da li je ključ tačan
+        if (!token) {
+        console.error("Token nije pronađen u odgovoru!");
+          return;
+}
+
+        // Sačuvaj token u localStorage
+        localStorage.setItem('authToken', token);
+        console.log("Token uspešno sačuvan:", token);
+
+        // Preusmeri korisnika na početnu stranicu
+        router.push('/');
+    } catch (error) {
+        submitted.value = false;
+        console.error("Greška pri prijavi:", error);
+
+        // Obrada poruke greške za prikaz korisniku
+        const errorMessage = error.response?.data || 'Login error';
+        notification.value = {
             msgType: 'error',
-            msgBody: error.response?.data?.message || 'Login error',
-          };
-        }
-      };*/
-      const onSubmit = async () => {
-  notification.value = null;
-  submitted.value = true;
-  try {
-    await axios.post('http://localhost:8080/auth/login', form.value);
-    
-    router.push('/'); // Preusmeri na stranicu nakon uspešnog logovanja
-  } catch (error) {
-    submitted.value = false;
-    // Ako je status greške 403, prikazuje poruku o aktivaciji naloga
-    const errorMessage = error.response?.data || 'Login error';
-    notification.value = {
-      msgType: 'error',
-      msgBody: errorMessage === 'Your account isn\'t activated yet. Check your mail.' 
-                ? errorMessage 
-                : 'Login failed. Please check your credentials.',
-    };
-  }
+            msgBody: errorMessage === 'Your account isn\'t activated yet. Check your mail.' 
+                      ? errorMessage 
+                      : 'Login failed. Please check your credentials.',
+        };
+    }
 };
-
-
       return {
         title,
         submitted,
