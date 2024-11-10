@@ -6,6 +6,14 @@
   <router-link to="/allPosts" class="link">Posts</router-link>
 
 </div>
+
+<div class="links-container" >
+    <router-link to="/analitics" class="link">User Analytics</router-link>
+    <router-link to="/chat" class="link">User Chat</router-link>
+    <router-link to="/nearPosts" class="link">Near Posts</router-link>
+    <router-link to="/followedPosts" class="link">Followed Posts</router-link>
+    <router-link :to="`/profile/${userId}`" class="link">Profile</router-link>
+  </div>
 <p>Hello</p>
 </template>
 <script>
@@ -22,12 +30,8 @@ export default {
   },
   created() {
     
-/*
-    localStorage.removeItem("user");
-    const user = localStorage.getItem("user"); 
-    if (user) {
-      this.isLoggedIn = true;
-    }*/
+  
+  
   }
 
 }
