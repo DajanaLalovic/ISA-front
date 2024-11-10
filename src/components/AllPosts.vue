@@ -47,9 +47,29 @@
         }
       };
   
-      const likePost = (postId) => {
-        console.log(`Liked post with ID: ${postId}`);
-      };
+      const likePost = async (postId) => {
+        try {
+          const userId = 1; 
+
+          const response = await axios.put(`http://localhost:8080/api/posts/like/${postId}`, null, {
+            params: {
+              userId: userId
+            }
+          });
+
+          const updatedPost = response.data;
+          const postIndex = posts.value.findIndex((post) => post.id === postId);
+          if (postIndex !== -1) {
+            posts.value[postIndex] = updatedPost;
+          }
+          
+          console.log(`Post with ID ${postId} liked by user ${userId}`);
+        } catch (error) {
+          console.error('Error liking post:', error);
+        }
+        //ne radi zbog cors-a,spojiti sa arijaninim
+};
+
   
       const viewComments = (postId) => {
         console.log(`Viewing comments for post with ID: ${postId}`);
@@ -92,9 +112,9 @@
   }
   
   .post-image {
-    width: 90%;
+    width: 100%;
     height: 250px;
-    object-fit: cover; /* Opcionalno, zadrži proporcije slike */
+    object-fit: contain; 
     margin: 10px 0;
   }
   
