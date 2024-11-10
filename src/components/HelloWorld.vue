@@ -2,6 +2,7 @@
 <div class="links-container" v-if="!isLoggedIn">
   <router-link to="/signup" class="link">Sign up</router-link>
   <router-link to="/login" class="link">Login</router-link>
+  <router-link to="/allPosts" class="link">Posts</router-link>
 </div>
 <p>Hello</p>
 </template>

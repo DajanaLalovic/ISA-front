@@ -4,6 +4,7 @@ import Activate from '@/components/Activate.vue';
 import HelloWorld from '@/components/HelloWorld.vue';
 import LogIn from '@/components/LogIn.vue';
 import Profile from '@/components/Profile.vue';
+import AllPosts from '@/components/AllPosts.vue';
 
 const routes = [
   { path: '/', name: 'HelloWorld', component: HelloWorld },
@@ -11,6 +12,8 @@ const routes = [
   { path: '/login', name: 'LogIn', component: LogIn },
   { path: '/auth/authorize',name: 'ActivateAccount', component: Activate },
   {path: '/profile/:userId', name: 'ProfileView',component: Profile},
+  { path: '/allPosts', name: 'AllPosts', component: AllPosts }
+
 ];
 
 const router = createRouter({
