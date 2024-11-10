@@ -80,8 +80,11 @@
   notification.value = null;
   submitted.value = true;
   try {
-    await axios.post('http://localhost:8080/auth/login', form.value);
-    
+    //await axios.post('http://localhost:8080/auth/login', form.value);
+    const response = await axios.post('http://localhost:8080/auth/login', form.value);
+    console.log(response); 
+    localStorage.setItem("user", JSON.stringify(form.value)); // Spremi podatke u localStorage
+   // this.isLoggedIn = true;
     router.push('/'); // Preusmeri na stranicu nakon uspešnog logovanja
   } catch (error) {
     submitted.value = false;

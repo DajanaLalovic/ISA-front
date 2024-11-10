@@ -1,5 +1,5 @@
 <template>
-<div class="links-container">
+<div class="links-container" v-if="!isLoggedIn">
   <router-link to="/signup" class="link">Sign up</router-link>
   <router-link to="/login" class="link">Login</router-link>
 </div>
@@ -10,6 +10,19 @@ export default {
   name: 'HelloWorld',
   props: {
     msg: String
+  },
+  data() {
+    return {
+     
+      isLoggedIn: false 
+    };
+  },
+  created() {
+    
+   // const user = localStorage.getItem("user"); 
+   /* if (user) {
+      this.isLoggedIn = true;
+    }*/
   }
 }
 </script>
