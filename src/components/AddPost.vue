@@ -65,6 +65,7 @@ export default {
     const route = useRoute();
     const submitted = ref(false);
     const isUpdating = ref(false);
+
     const form = ref({
       id: null, // Dodato samo za azuriranje
       description: '',
@@ -135,6 +136,8 @@ export default {
         alert(isUpdating.value ? 'Post uspešno ažuriran!' : 'Post uspešno dodat!');
         //await fetchPosts();
         router.push('/allPosts');
+
+        submitted.value = false;
       } catch (error) {
         console.error('Greška pri dodavanju/ažuriranju posta:', error.response?.status, error.response?.data);
         if (error.response && error.response.status === 401) {

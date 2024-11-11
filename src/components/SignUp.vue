@@ -84,7 +84,7 @@
   </template>
   
   <script>
-  import { ref, computed } from 'vue';
+  import { ref, computed ,onMounted} from 'vue';
   import { useRouter } from 'vue-router';
   import axios from 'axios';
   
@@ -103,6 +103,12 @@
         surname: '',
         email: '',
       });
+      onMounted(() => {
+      if (localStorage.getItem('isLoggedIn') === 'true') {
+        router.push('/'); // Preusmeravanje ako je korisnik već prijavljen
+      }
+    });
+
   
       const isFormValid = computed(() => {
         return (

@@ -35,12 +35,13 @@ export default {
     const user = ref(null);
     const route = useRoute();
     const userId = route.params.userId;
+    console.log('User ID:', userId);
 
     const fetchUserProfile = async () => {
       try {
         const response = await axios.get(`http://localhost:8080/api/profile/${userId}`, {
           // Uncomment the line below if authentication token is required
-          // headers: { Authorization: `Bearer ${localStorage.getItem('token')}` }
+         // headers: { Authorization: `Bearer ${localStorage.getItem('token')}` }
         });
         user.value = response.data;
       } catch (error) {

@@ -2,6 +2,7 @@
   <div class="posts-list">
     <button @click="goBackToHome" class="return-button">Return </button>
     <div v-for="post in posts" :key="post.id" class="post-card">
+      <div class="post-date">{{ formatDate(post.createdAt) }}</div>
       <div class="post-header">
         <img :src="post.imagePath" alt="Post image" class="post-image" />
         <div class="menu-container">
@@ -10,13 +11,17 @@
             <span @click="openUpdateModal(post)">Update</span>
             <span @click="deletePost(post.id)">Delete</span>
             <span @click="hidePost(post.id)">Hide</span>
+
           </div>
         </div>
       </div>
 
       <div class="post-details">
         <div class="post-info">
-          <h3>{{ users[post.userId] ? `${users[post.userId].name} ${users[post.userId].surname}` : "Unknown User" }}</h3>
+          <div class="user-info">
+              <h3>{{ users[post.userId] ? `${users[post.userId].name} ${users[post.userId].surname}` : "Unknown User" }}</h3>
+            <span @click="goToProfile(post.userId)" class="action-icon">    👤 </span>
+          </div>
           <p>{{ post.description }}</p>
         </div>
         <div class="post-actions">
@@ -48,24 +53,28 @@ export default {
     const fetchPosts = async () => {
   try {
     const response = await axios.get('http://localhost:8080/api/posts/all');
-    
-    posts.value = await Promise.all(
+    const processedPosts = await Promise.all(
       response.data
-        .filter(post => !post.isRemoved) 
+        .filter(post => !post.isRemoved)
         .map(async post => ({
           ...post,
-          imagePath: `http://localhost:8080/${post.imagePath}`,
-          likesCount: await fetchLikesCount(post.id) 
+          imagePath: `http://localhost:8080/images/${post.imagePath}`,
+          likesCount: await fetchLikesCount(post.id)
         }))
     );
     
-    response.data.forEach(post => {
-      if (!post.isRemoved) fetchUser(post.userId);
+    // Sortiranje postova po datumu kreiranja
+    posts.value = processedPosts.sort((a, b) => new Date(b.createdAt) - new Date(a.createdAt));
+
+    // Učitaj korisnike za postove
+    processedPosts.forEach(post => {
+      fetchUser(post.userId);
     });
   } catch (error) {
     console.error('Error fetching posts:', error);
   }
 };
+
 
 
     const goBackToHome = () => {
@@ -96,40 +105,66 @@ export default {
     const toggleMenu = (postId) => {
       menuOpen.value[postId] = !menuOpen.value[postId];
     };
+    const viewComments = (postId) => {
+        console.log(`Viewing comments for post with ID: ${postId}`);
+        const authToken = localStorage.getItem('authToken');
+        console.log(authToken);
+        if (!authToken) {
+          alert("You cannot leave comments, you are not logged in!");
+          return;
+        }
+    };
+    const goToProfile = (userId) => {
+      router.push(`/profile/${userId}`);
+      };
+      const formatDate = (dateString) => {
+        const date = new Date(dateString);
+        const day = String(date.getDate()).padStart(2, '0');
+        const month = String(date.getMonth() + 1).padStart(2, '0');
+        const year = date.getFullYear();
+        const hours = String(date.getHours()).padStart(2, '0');
+        const minutes = String(date.getMinutes()).padStart(2, '0');
+        return `${day}/${month}/${year} ${hours}:${minutes}`;
+      };
    
     const likePost = async (postId) => {
-  const token = localStorage.getItem('authToken');
-  if (!token) {
-    console.error('User not authenticated');
-    return;
-  }
+      const token = localStorage.getItem('authToken');
+        console.log(token);
+        if (!token) {
+          alert("You cannot like post, you are not logged in!");
+          return;
+        }
 
-  try {
-    const userId = parseInt(localStorage.getItem('userId'));
-    const postIndex = posts.value.findIndex((post) => post.id === postId);
-
-    if (postIndex !== -1) {
-      const post = posts.value[postIndex];
-
-      if (!post.likes) post.likes = [];
-      if (post.likes.includes(userId)) {
-        console.log("User has already liked this post.");
-        return; 
+      if (!token) {
+        console.error('User not authenticated');
+        return;
       }
 
-      await axios.put(`http://localhost:8080/api/posts/like/${postId}`, null, {
-        headers: { 'Authorization': `Bearer ${token}` },
-        params: { userId }
-      });
+      try {
+        const userId = parseInt(localStorage.getItem('userId'));
+        const postIndex = posts.value.findIndex((post) => post.id === postId);
 
-      post.likes.push(userId);
-      post.likesCount += 1; 
-    }
-  } catch (error) {
-    console.error('Error liking post:', error);
-  }
-};
+        if (postIndex !== -1) {
+          const post = posts.value[postIndex];
 
+          if (!post.likes) post.likes = [];
+          if (post.likes.includes(userId)) {
+            console.log("User has already liked this post.");
+            return; 
+          }
+
+          await axios.put(`http://localhost:8080/api/posts/like/${postId}`, null, {
+            headers: { 'Authorization': `Bearer ${token}` },
+            params: { userId }
+          });
+
+          post.likes.push(userId);
+          post.likesCount += 1; 
+        }
+      } catch (error) {
+        console.error('Error liking post:', error);
+      }
+    };
 
     const openUpdateModal = (post) => {
       router.push({
@@ -213,6 +248,9 @@ const hidePost = async (postId) => {
       deletePost,
       hidePost,
       fetchLikesCount,
+      viewComments,
+      goToProfile,
+      formatDate,
     };
   },
 };
@@ -316,6 +354,15 @@ const hidePost = async (postId) => {
   justify-content: flex-end;
   margin-top: 10px;
 }
+.user-info {
+  display: flex;
+  align-items: center;
+  }
+  .user-info h3 {
+    margin: 0;
+    font-size: 18px;
+    color: #333;
+  }
 
 .action-icon {
   cursor: pointer;
@@ -330,4 +377,12 @@ const hidePost = async (postId) => {
 .return-button{
   margin-bottom: 20px;
 }
+.post-date {
+  margin-left: 70%;
+  margin-top: 2%;
+  
+  font-size: 14px;
+  color: #666;
+  }
 </style>
+

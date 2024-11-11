@@ -35,10 +35,11 @@
   </template>
   
   <script>
-  import { ref, computed } from 'vue';
+  import { ref, computed ,onMounted} from 'vue';
   import { useRouter } from 'vue-router';
   import axios from 'axios';
-  
+
+
   export default {
     name: 'LogIn',
     setup() {
@@ -50,6 +51,13 @@
         username: '',
         password: '',
       });
+      const userId = ref(null);
+      onMounted(() => {
+      if (localStorage.getItem('isLoggedIn') === 'true') {
+        router.push('/'); // Preusmeravanje ako je korisnik već prijavljen
+      }
+    });
+
   
       const isFormValid = computed(() => {
         return (
@@ -61,7 +69,32 @@
           form.value.password.length <= 32
         );
       });
-  
+
+      const fetchCurrentUser = async () => {
+      try {
+        const token = localStorage.getItem('authToken'); // Učitaj token iz localStorage
+        if (!token) {
+          console.error('JWT token nije pronađen');
+          return;
+        }
+
+        const response = await axios.get('http://localhost:8080/api/user-whoami', {
+          headers: {
+            'Authorization': `Bearer ${token}`,
+          },
+        });
+        const user = response.data;
+        if (user) {
+          userId.value = user.id;
+          localStorage.setItem('userId', userId.value);
+          console.log('User ID saved to localStorage:', userId.value);
+          return user;
+        }
+      } catch (error) {
+        console.error('Error fetching current user:', error);
+      }
+    };
+    
     const onSubmit = async () => {
     notification.value = null;
     submitted.value = true;
@@ -76,6 +109,10 @@
         // Sačuvaj token u localStorage
         localStorage.setItem('authToken', token);
         console.log("Token uspešno sačuvan:", token);
+        localStorage.setItem('isLoggedIn', 'true'); 
+        console.log(localStorage.getItem('isLoggedIn'));
+        await fetchCurrentUser();
+    
         router.push('/');
     } catch (error) {
         submitted.value = false;

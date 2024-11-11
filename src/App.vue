@@ -10,6 +10,10 @@
 export default {
   name: 'App'
 }
+window.addEventListener('beforeunload', () => {
+  localStorage.removeItem('authToken');
+  localStorage.removeItem('isLoggedIn');
+});
 </script>
 
 <style>
