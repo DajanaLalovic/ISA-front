@@ -4,8 +4,16 @@
   <router-link to="/login" class="link" v-if="!isLoggedIn">Login</router-link>
   <router-link to="/posts" class="link" v-if="isLoggedIn">AddPost</router-link>
   <router-link to="/allPosts" class="link">Posts</router-link>
-
+  <router-link to="/profile/1" class="link" v-if="isLoggedIn">My Profile</router-link>
 </div>
+
+<div class="links-container" >
+    <router-link to="/analitics" class="link" v-if="isLoggedIn">User Analytics</router-link>
+    <router-link to="/chat" class="link" v-if="isLoggedIn">User Chat</router-link>
+    <router-link to="/nearPosts" class="link" v-if="isLoggedIn">Near Posts</router-link>
+    <router-link to="/followedPosts" class="link" v-if="isLoggedIn">Followed Posts</router-link>
+    
+  </div>
 <p>Hello</p>
 </template>
 <script>
@@ -23,21 +31,18 @@ export default {
       isLoggedIn: false 
     };
   },
+
   mounted() {
     const authStatus = localStorage.getItem('isLoggedIn');
     this.isLoggedIn = authStatus === 'true'; // Ako je ulogovan, status će biti 'true'
     console.log('Login status:', this.isLoggedIn);
-/*
-    localStorage.removeItem("user");
-    const user = localStorage.getItem("user"); 
-    if (user) {
-      this.isLoggedIn = true;
-    }*/
+
   }, 
   created() {
 
   },
     
+
 
 }
 </script>

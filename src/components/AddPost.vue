@@ -48,11 +48,13 @@
 <script>
 import { ref, computed } from 'vue';
 import axios from 'axios';
+import {useRouter } from 'vue-router';
 
 export default {
   name: 'AddPost',
   setup() {
     const submitted = ref(false);
+    const router = useRouter();
     const form = ref({
       description: '',
       latitude: '',
@@ -92,6 +94,7 @@ export default {
         });
 
         alert('Post uspešno dodat!');
+        router.push('/allPosts');
         submitted.value = false;
       } catch (error) {
         console.error('Greška pri dodavanju posta:', error);

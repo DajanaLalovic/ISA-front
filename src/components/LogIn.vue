@@ -85,6 +85,7 @@
         console.log("Token uspešno sačuvan:", token);
         localStorage.setItem('isLoggedIn', 'true'); 
         console.log(localStorage.getItem('isLoggedIn'));
+        
         router.push('/');
     } catch (error) {
         submitted.value = false;
