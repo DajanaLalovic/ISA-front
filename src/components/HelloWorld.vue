@@ -12,7 +12,7 @@
     <router-link to="/chat" class="link">User Chat</router-link>
     <router-link to="/nearPosts" class="link">Near Posts</router-link>
     <router-link to="/followedPosts" class="link">Followed Posts</router-link>
-    <router-link :to="`/profile/${userId}`" class="link">Profile</router-link>
+    
   </div>
 <p>Hello</p>
 </template>
