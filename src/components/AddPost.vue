@@ -25,7 +25,7 @@
           />
         </label>
 
-        <label>
+        <!-- <label>
           Latitude:
           <input
             type="number"
@@ -44,7 +44,8 @@
             required
             placeholder="Longitude"
           />
-        </label>
+        </label> -->
+        <div id="map" class="map"></div>
         <button :disabled="!isFormValid" type="submit">{{ isUpdating ? 'Update' : 'Add' }} Post</button>
       </form>
       <div v-if="submitted" class="loading">Loading...</div>
@@ -56,6 +57,11 @@
 import { ref, computed, onMounted } from 'vue';
 import { useRouter, useRoute } from 'vue-router';
 import axios from 'axios';
+import { Map, View } from 'ol';
+import TileLayer from 'ol/layer/Tile';
+import OSM from 'ol/source/OSM';
+import { toLonLat,fromLonLat } from 'ol/proj';
+import { defaults as defaultControls } from 'ol/control';
 
 export default {
   name: 'AddPost',
@@ -75,8 +81,9 @@ export default {
       imagePath: '', // URL  isto za azuriranje
 
     });
-
+    let map = null;
     onMounted(() => {
+      initializeMap();
       if (route.query.id) {
         isUpdating.value = true;
         form.value.id = route.query.id;
@@ -86,7 +93,10 @@ export default {
         form.value.imageBase64 = route.query.imageBase64 || ''; 
         form.value.createdAt = route.query.createdAt || ''; 
         form.value.imagePath = route.query.imagePath || ''; 
-
+        if (form.value.latitude && form.value.longitude) {
+        map.getView().setCenter(fromLonLat([form.value.longitude, form.value.latitude]));
+        map.getView().setZoom(15); // Podesi nivo zumiranja po želji
+    }
       }
     });
 
@@ -148,7 +158,31 @@ export default {
         }
       }
     };
+    function initializeMap() {
+      map = new Map({
+        target: 'map',
+        layers: [
+          new TileLayer({
+            source: new OSM()
+          })
+        ],
+        view: new View({
+          center: fromLonLat([19.8335, 45.2671]), // Coordinates for Novi Sad, Serbia
+          zoom: 12
+        }),
+        controls: defaultControls({ // Prilagođavanje kontrola
+        
+        attribution: false // Uklanja natpis sa pravima
+    })
+      });
 
+      map.on('click', (event) => {
+        const coordinate = toLonLat(event.coordinate);
+        form.value.latitude = coordinate[1].toFixed(6);
+        form.value.longitude = coordinate[0].toFixed(6);
+        console.log(`Latitude: ${form.value.latitude}, Longitude: ${form.value.longitude}`);
+      });
+    }
 
     return {
       submitted,
@@ -156,17 +190,103 @@ export default {
       isFormValid,
       onFileChange,
       onSubmitPost,
-      isUpdating
+      isUpdating, 
+      initializeMap
     };
   },
 };
 </script>
-<style>
-.current-image {
-  width: 150px; 
-  height: auto; 
-  border-radius: 8px; 
-  margin-bottom: 10px; 
+<style scoped>
+.content {
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  margin-top: 40px;
 }
 
+.post-card {
+  background-color: #f9f9f9;
+  padding: 20px;
+  border-radius: 12px;
+  box-shadow: 0 2px 10px rgba(0, 0, 0, 0.1);
+  max-width: 600px;
+  width: 100%;
+}
+
+h2 {
+  font-size: 24px;
+  margin-bottom: 20px;
+  text-align: center;
+  color: #333;
+}
+
+form label {
+  display: block;
+  margin-bottom: 15px;
+  font-weight: bold;
+  color: #555;
+}
+
+form textarea,
+form input[type="file"],
+form input[type="number"] {
+  width: 100%;
+  padding: 10px;
+  margin-top: 5px;
+  border: 1px solid #ccc;
+  border-radius: 6px;
+  background-color: #fff;
+  color: #333;
+  font-size: 14px;
+}
+
+form textarea {
+  resize: vertical;
+  min-height: 100px;
+}
+
+form button {
+  background-color: #007bff;
+  color: #fff;
+  padding: 10px 15px;
+  border: none;
+  border-radius: 6px;
+  cursor: pointer;
+  transition: background-color 0.3s ease;
+  font-size: 16px;
+  width: 100%;
+}
+
+form button:disabled {
+  background-color: #ccc;
+  cursor: not-allowed;
+}
+
+form button:hover:not(:disabled) {
+  background-color: #0056b3;
+}
+
+.loading {
+  font-size: 18px;
+  text-align: center;
+  color: #333;
+  margin-top: 20px;
+}
+
+.map {
+  width: 100%;
+  height: 400px;
+  margin: 20px 0;
+  border: 1px solid #ccc;
+  border-radius: 6px;
+}
+
+.current-image {
+  display: block;
+  margin: 10px auto;
+  max-width: 100%;
+  height: auto;
+  border-radius: 8px;
+}
 </style>
+
