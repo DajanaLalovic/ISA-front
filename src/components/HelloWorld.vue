@@ -1,14 +1,17 @@
 <template>
-<div class="links-container" v-if="!isLoggedIn">
-  <router-link to="/signup" class="link">Sign up</router-link>
-  <router-link to="/login" class="link">Login</router-link>
-  <router-link to="/posts" class="link">AddPost</router-link>
+<div class="links-container" >
+  <router-link to="/signup" class="link" v-if="!isLoggedIn">Sign up</router-link>
+  <router-link to="/login" class="link" v-if="!isLoggedIn">Login</router-link>
+  <router-link to="/posts" class="link" v-if="isLoggedIn">AddPost</router-link>
   <router-link to="/allPosts" class="link">Posts</router-link>
 
 </div>
 <p>Hello</p>
 </template>
 <script>
+
+
+
 export default {
   name: 'HelloWorld',
   props: {
@@ -20,15 +23,21 @@ export default {
       isLoggedIn: false 
     };
   },
-  created() {
-    
+  mounted() {
+    const authStatus = localStorage.getItem('isLoggedIn');
+    this.isLoggedIn = authStatus === 'true'; // Ako je ulogovan, status će biti 'true'
+    console.log('Login status:', this.isLoggedIn);
 /*
     localStorage.removeItem("user");
     const user = localStorage.getItem("user"); 
     if (user) {
       this.isLoggedIn = true;
     }*/
-  }
+  }, 
+  created() {
+
+  },
+    
 
 }
 </script>

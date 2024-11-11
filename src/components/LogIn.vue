@@ -35,10 +35,11 @@
   </template>
   
   <script>
-  import { ref, computed } from 'vue';
+  import { ref, computed ,onMounted} from 'vue';
   import { useRouter } from 'vue-router';
   import axios from 'axios';
-  
+
+
   export default {
     name: 'LogIn',
     setup() {
@@ -50,6 +51,12 @@
         username: '',
         password: '',
       });
+      onMounted(() => {
+      if (localStorage.getItem('isLoggedIn') === 'true') {
+        router.push('/'); // Preusmeravanje ako je korisnik već prijavljen
+      }
+    });
+
   
       const isFormValid = computed(() => {
         return (
@@ -76,6 +83,8 @@
         // Sačuvaj token u localStorage
         localStorage.setItem('authToken', token);
         console.log("Token uspešno sačuvan:", token);
+        localStorage.setItem('isLoggedIn', 'true'); 
+        console.log(localStorage.getItem('isLoggedIn'));
         router.push('/');
     } catch (error) {
         submitted.value = false;
