@@ -24,8 +24,8 @@
             :required="!isUpdating"
           />
         </label>
-
-        <!-- <label>
+        <div id="map" class="map"></div>
+        <label>
           Latitude:
           <input
             type="number"
@@ -44,8 +44,8 @@
             required
             placeholder="Longitude"
           />
-        </label> -->
-        <div id="map" class="map"></div>
+        </label>
+        
         <button :disabled="!isFormValid" type="submit">{{ isUpdating ? 'Update' : 'Add' }} Post</button>
       </form>
       <div v-if="submitted" class="loading">Loading...</div>
@@ -167,12 +167,12 @@ export default {
           })
         ],
         view: new View({
-          center: fromLonLat([19.8335, 45.2671]), // Coordinates for Novi Sad, Serbia
+          center: fromLonLat([19.8335, 45.2671]), 
           zoom: 12
         }),
-        controls: defaultControls({ // Prilagođavanje kontrola
+        controls: defaultControls({ 
         
-        attribution: false // Uklanja natpis sa pravima
+        attribution: false 
     })
       });
 
