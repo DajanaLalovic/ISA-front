@@ -1,161 +1,333 @@
 <template>
-    <div class="posts-list">
-      <div v-for="post in posts" :key="post.id" class="post-card">
+  <div class="posts-list">
+    <button @click="goBackToHome" class="return-button">Return </button>
+    <div v-for="post in posts" :key="post.id" class="post-card">
+      <div class="post-header">
         <img :src="post.imagePath" alt="Post image" class="post-image" />
-  
-        <div class="post-details">
-          <div class="post-info">
-            <h3>{{ users[post.userId] ? `${users[post.userId].name} ${users[post.userId].surname}` : "Unknown User" }}</h3>
-            <p>{{ post.description }}</p>
-          </div>
-          <div class="post-actions">
-            <span @click="likePost(post.id)" class="action-icon">👍 {{ post.likes?.length  || 0}}</span>
-            <span @click="viewComments(post.id)" class="action-icon">💬 {{ post.comments?.length || 0 }}</span>
+        <div class="menu-container">
+          <span class="menu-icon" @click="toggleMenu(post.id)">⋮</span>
+          <div v-if="menuOpen[post.id]" class="dropdown-menu">
+            <span @click="openUpdateModal(post)">Update</span>
+            <span @click="deletePost(post.id)">Delete</span>
+            <span @click="hidePost(post.id)">Hide</span>
           </div>
         </div>
       </div>
+
+      <div class="post-details">
+        <div class="post-info">
+          <h3>{{ users[post.userId] ? `${users[post.userId].name} ${users[post.userId].surname}` : "Unknown User" }}</h3>
+          <p>{{ post.description }}</p>
+        </div>
+        <div class="post-actions">
+          <span @click="likePost(post.id)" class="action-icon">👍  {{ post.likesCount }}  </span>
+          <span @click="viewComments(post.id)" class="action-icon">💬 {{ post.comments?.length || 0 }}</span>
+        </div>
+      </div>
     </div>
-  </template>
-  
-  <script>
-  import axios from 'axios';
-  import { ref, onMounted } from 'vue';
-  
-  export default {
-    name: 'AllPosts',
-    setup() {
-      const posts = ref([]);
-      const users = ref({});
-      const fetchPosts = async () => {
-        try {
-          const response = await axios.get('http://localhost:8080/api/posts/all');
-          posts.value = response.data;
-          response.data.forEach(post => fetchUser(post.userId));
-        } catch (error) {
-          console.error('Error fetching posts:', error);
-        }
-      };
-  
-      const fetchUser = async (userId) => {
-        if (!users.value[userId]) {
-          try {
-            const response = await axios.get(`http://localhost:8080/api/getOneUser/${userId}`);
-            users.value[userId] = response.data;
-          } catch (error) {
-            console.error(`Error with userId ${userId}:`, error);
-          }
-        }
-      };
-  
-      const likePost = async (postId) => {
-        try {
-          const userId = 1; 
+  </div>
+</template>
 
-          const response = await axios.put(`http://localhost:8080/api/posts/like/${postId}`, null, {
-            params: {
-              userId: userId
-            }
-          });
+<script>
+import axios from 'axios';
+import { ref, onMounted } from 'vue';
+import { useRouter } from 'vue-router';
 
-          const updatedPost = response.data;
-          const postIndex = posts.value.findIndex((post) => post.id === postId);
-          if (postIndex !== -1) {
-            posts.value[postIndex] = updatedPost;
-          }
-          
-          console.log(`Post with ID ${postId} liked by user ${userId}`);
-        } catch (error) {
-          console.error('Error liking post:', error);
-        }
-        //ne radi zbog cors-a,spojiti sa arijaninim
+export default {
+  name: 'AllPosts',
+  setup() {
+    const router = useRouter();
+    const posts = ref([]);
+    const users = ref({});
+    const menuOpen = ref({});
+  
+    // watch(() => route.query.refresh, () => {
+    //   fetchPosts();
+    // });
+
+    const fetchPosts = async () => {
+  try {
+    const response = await axios.get('http://localhost:8080/api/posts/all');
+    
+    posts.value = await Promise.all(
+      response.data
+        .filter(post => !post.isRemoved) 
+        .map(async post => ({
+          ...post,
+          imagePath: `http://localhost:8080/${post.imagePath}`,
+          likesCount: await fetchLikesCount(post.id) 
+        }))
+    );
+    
+    response.data.forEach(post => {
+      if (!post.isRemoved) fetchUser(post.userId);
+    });
+  } catch (error) {
+    console.error('Error fetching posts:', error);
+  }
 };
 
-  
-      const viewComments = (postId) => {
-        console.log(`Viewing comments for post with ID: ${postId}`);
-      };
-  
-      onMounted(() => {
-        fetchPosts();
+
+    const goBackToHome = () => {
+      router.push('/');
+    };
+    const fetchLikesCount = async (postId) => {
+      try {
+        const response = await axios.get(`http://localhost:8080/api/posts/likesCount/${postId}`);
+        return response.data;
+      } catch (error) {
+        console.error(`Error fetching likes count for post ${postId}:`, error);
+        return 0;
+      }
+    };
+
+
+    const fetchUser = async (userId) => {
+      if (!users.value[userId]) {
+        try {
+          const response = await axios.get(`http://localhost:8080/api/getOneUser/${userId}`);
+          users.value[userId] = response.data;
+        } catch (error) {
+          console.error(`Error with userId ${userId}:`, error);
+        }
+      }
+    };
+
+    const toggleMenu = (postId) => {
+      menuOpen.value[postId] = !menuOpen.value[postId];
+    };
+   
+    const likePost = async (postId) => {
+  const token = localStorage.getItem('authToken');
+  if (!token) {
+    console.error('User not authenticated');
+    return;
+  }
+
+  try {
+    const userId = parseInt(localStorage.getItem('userId'));
+    const postIndex = posts.value.findIndex((post) => post.id === postId);
+
+    if (postIndex !== -1) {
+      const post = posts.value[postIndex];
+
+      if (!post.likes) post.likes = [];
+      if (post.likes.includes(userId)) {
+        console.log("User has already liked this post.");
+        return; 
+      }
+
+      await axios.put(`http://localhost:8080/api/posts/like/${postId}`, null, {
+        headers: { 'Authorization': `Bearer ${token}` },
+        params: { userId }
       });
-  
-      return {
-        posts,
-        users,
-        likePost,
-        viewComments,
-      };
-    },
-  };
-  </script>
-  
-  <style scoped>
-  .posts-list {
-    background-image: url('https://www.example.com/your-background-image.jpg'); /* Postavi URL svoje pozadine */
-    background-size: cover;
-    padding: 20px;
-    min-height: 100vh;
-    display: flex;
-    flex-direction: column;
-    align-items: center;
+
+      post.likes.push(userId);
+      post.likesCount += 1; 
+    }
+  } catch (error) {
+    console.error('Error liking post:', error);
   }
-  
-  .post-card {
-    width: 600px;
-    border: 1px solid #ccc;
-    border-radius: 10px;
-    margin-bottom: 20px;
-    overflow: hidden;
-    background-color: #fff;
-    box-shadow: 0 4px 8px rgba(0, 0, 0, 0.2);
-    align-items: center; 
+};
+
+
+    const openUpdateModal = (post) => {
+      router.push({
+        name: 'AddPost',
+        query: {
+          id: post.id,
+          description: post.description,
+          latitude: post.latitude,
+          longitude: post.longitude,
+          imagePath: post.imagePath,
+          createdAt:post.createdAt
+        },
+      });
+    };
+  const deletePost = async (postId) => {
+    console.log(`Attempting to delete post with ID: ${postId}`);
+    const token = localStorage.getItem('authToken');
+    if (!token) {
+      console.error('User not authenticated');
+      return;
+    }
+
+    try {
+      const response = await axios.delete(`http://localhost:8080/api/posts/${postId}`, {
+        headers: { 'Authorization': `Bearer ${token}` }
+      });
+
+      if (response.status === 200) {
+        posts.value = posts.value.filter(post => post.id !== postId);
+        alert('Post deleted successfully.');
+      }
+    } catch (error) {
+      if (error.response && error.response.status === 403) {
+        alert('You do not have permission to delete this post.');
+      } else {
+        console.error('Error deleting post:', error);
+      }
+    }
+};
+
+const hidePost = async (postId) => {
+  const token = localStorage.getItem('authToken');
+  if (!token) {
+    console.error('User not authenticated');
+    return;
   }
-  
-  .post-image {
-    width: 100%;
-    height: 250px;
-    object-fit: contain; 
-    margin: 10px 0;
+
+  try {
+    const response = await axios.put(`http://localhost:8080/api/posts/deleteLogically/${postId}`, null, {
+      headers: { 'Authorization': `Bearer ${token}` }
+    });
+
+    if (response.status === 200) {
+      const postIndex = posts.value.findIndex(post => post.id === postId);
+      if (postIndex !== -1) posts.value.splice(postIndex, 1);
+      alert('Post hidden successfully.');
+    }
+  } catch (error) {
+    if (error.response && error.response.status === 403) {
+      alert('You do not have permission to hide this post.');
+    } else {
+      console.error('Error hiding post:', error);
+    }
   }
-  
-  .post-details {
-    padding: 15px;
-    display: flex;
-    flex-direction: column;
-  }
-  
-  .post-info {
-    text-align: left;
-    margin-bottom: 10px;
-  }
-  
-  .post-info h3 {
-    margin: 0;
-    font-size: 18px;
-    color: #333;
-  }
-  
-  .post-info p {
-    margin: 5px 0 0;
-    font-size: 16px;
-    color: #666;
-  }
-  
-  .post-actions {
-    display: flex;
-    justify-content: flex-end;
-    margin-top: 10px;
-  }
-  
-  .action-icon {
-    cursor: pointer;
-    font-size: 18px;
-    margin-left: 15px;
-    color: #888;
-  }
-  
-  .action-icon:hover {
-    color: #007bff;
-  }
-  </style>
-  
+};
+
+
+
+    onMounted(() => {
+      fetchPosts();
+    });
+
+    return {
+      posts,
+      users,
+      menuOpen,
+      likePost,
+      openUpdateModal,
+      toggleMenu,
+      goBackToHome, 
+      deletePost,
+      hidePost,
+      fetchLikesCount,
+    };
+  },
+};
+</script>
+
+<style scoped>
+.posts-list {
+  background-size: cover;
+  padding: 20px;
+  min-height: 100vh;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+}
+
+.post-card {
+  width: 600px;
+  border: 1px solid #ccc;
+  border-radius: 10px;
+  margin-bottom: 20px;
+  overflow: hidden;
+  background-color: #fff;
+  box-shadow: 0 4px 8px rgba(0, 0, 0, 0.2);
+  position: relative;
+}
+
+.menu-container {
+  position: absolute;
+  top: 10px;
+  right: 10px;
+  cursor: pointer;
+  font-size: 20px;
+  color: #666;
+  z-index: 2;
+}
+
+.menu-icon {
+  font-size: 24px;
+  color: #888;
+  cursor: pointer;
+}
+
+.dropdown-menu {
+  position: absolute;
+  top: 30px;
+  right: 10px;
+  background-color: white;
+  border: 1px solid #ddd;
+  border-radius: 4px;
+  padding: 8px 0;
+  box-shadow: 0 4px 8px rgba(0, 0, 0, 0.2);
+  z-index: 5;
+}
+
+.dropdown-menu span {
+  display: block;
+  padding: 10px 15px;
+  font-size: 14px;
+  color: #333;
+  cursor: pointer;
+  white-space: nowrap;
+}
+
+.dropdown-menu span:hover {
+  background-color: #f0f0f0;
+}
+
+.post-image {
+  width: 100%;
+  height: 250px;
+  object-fit: cover;
+  border-top-left-radius: 10px;
+  border-top-right-radius: 10px;
+}
+
+.post-details {
+  padding: 15px;
+  display: flex;
+  flex-direction: column;
+}
+
+.post-info {
+  text-align: left;
+  margin-bottom: 10px;
+}
+
+.post-info h3 {
+  margin: 0;
+  font-size: 18px;
+  color: #333;
+}
+
+.post-info p {
+  margin: 5px 0 0;
+  font-size: 16px;
+  color: #666;
+}
+
+.post-actions {
+  display: flex;
+  justify-content: flex-end;
+  margin-top: 10px;
+}
+
+.action-icon {
+  cursor: pointer;
+  font-size: 18px;
+  margin-left: 15px;
+  color: #888;
+}
+
+.action-icon:hover {
+  color: #007bff;
+}
+.return-button{
+  margin-bottom: 20px;
+}
+</style>
