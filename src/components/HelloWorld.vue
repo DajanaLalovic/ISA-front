@@ -8,6 +8,7 @@
         <router-link to="/login" class="nav-link" v-if="!isLoggedIn">Log in</router-link>
         <router-link to="/posts" class="nav-link" v-if="isLoggedIn">AddPost</router-link>
         <router-link to="/allPosts" class="nav-link">Posts</router-link>
+        <a @click.prevent="logout" class="nav-link" v-if="isLoggedIn">Logout</a>
         <router-link :to="`/profile/${userId}`" class="nav-link" v-if="isLoggedIn">My Profile</router-link>
       </div>
     </nav>
@@ -63,6 +64,21 @@ export default {
   methods: {
     navigateToSignUp() {
       this.$router.push('/signup');
+    },
+    logout() {
+      // Prikazivanje poruke
+      alert('You are logged out.');
+
+      // Brisanje podataka iz localStorage-a
+      localStorage.removeItem('authToken');
+      localStorage.removeItem('isLoggedIn');
+
+      // Resetovanje statusa u komponenti
+      this.isLoggedIn = false;
+      this.userId = null;
+
+      // Preusmeravanje na početnu stranicu
+      this.$router.push('/');
     }
   }
 };
