@@ -10,6 +10,7 @@ import UsersAnalitics from '@/components/UsersAnalitics.vue';
 import UsersChat from '@/components/UsersChat.vue';
 import NearPosts from '@/components/NearPosts.vue';
 import FollowedPosts from '@/components/FollowedPosts.vue';
+import AllUsers from '@/components/AllUsers.vue';
 
 const routes = [
   { path: '/', name: 'HelloWorld', component: HelloWorld },
@@ -22,7 +23,9 @@ const routes = [
   { path: '/analitics', name: 'UsersAnalitics', component: UsersAnalitics},
   {path: '/chat', name: 'UsersChat', component: UsersChat},
   {path:'/nearPosts', name: 'NearPosts', component: NearPosts},
-  {path: '/followedPosts', name:'FollowedPosts', component:FollowedPosts}
+  {path: '/followedPosts', name:'FollowedPosts', component:FollowedPosts},
+  {path: '/allUsers', name:'AllUsers', component:AllUsers}
+
 
 ];
 

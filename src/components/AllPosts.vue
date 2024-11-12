@@ -5,13 +5,14 @@
       <div class="post-date">{{ formatDate(post.createdAt) }}</div>
       <div class="post-header">
         <img :src="post.imagePath" alt="Post image" class="post-image" />
-        <div class="menu-container">
+        
+        <!-- Prikazuje tri tačke samo ako je korisnik ulogovan -->
+        <div v-if="isAuthen" class="menu-container">
           <span class="menu-icon" @click="toggleMenu(post.id)">⋮</span>
           <div v-if="menuOpen[post.id]" class="dropdown-menu">
             <span @click="openUpdateModal(post)">Update</span>
             <span @click="deletePost(post.id)">Delete</span>
             <span @click="hidePost(post.id)">Hide</span>
-
           </div>
         </div>
       </div>
@@ -19,15 +20,20 @@
       <div class="post-details">
         <div class="post-info">
           <div class="user-info">
-              <h3>{{ users[post.userId] ? `${users[post.userId].name} ${users[post.userId].surname}` : "Unknown User" }}</h3>
-            <span @click="goToProfile(post.userId)" class="action-icon">    👤 </span>
+            <h3>{{ users[post.userId] ? `${users[post.userId].name} ${users[post.userId].surname}` : "Unknown User" }}</h3>
+            <span @click="goToProfile(post.userId)" class="action-icon">👤</span>
           </div>
           <p>{{ post.description }}</p>
         </div>
         <div class="post-actions">
-          <span @click="likePost(post.id)" class="action-icon">👍  {{ post.likesCount }}  </span>
+          <span @click="likePost(post.id)" class="action-icon">👍  {{ post.likesCount }}</span>
           <span @click="viewComments(post.id)" class="action-icon">💬 {{ post.comments?.length || 0 }}</span>
         </div>
+      </div>
+
+      <!-- Display comments section if commentsVisible is true for this post -->
+      <div v-if="commentsVisible[post.id]" class="comments-section">
+        <p v-if="!post.comments || post.comments.length === 0">There are no comments.</p>
       </div>
     </div>
   </div>
@@ -45,41 +51,36 @@ export default {
     const posts = ref([]);
     const users = ref({});
     const menuOpen = ref({});
-  
-    // watch(() => route.query.refresh, () => {
-    //   fetchPosts();
-    // });
+    const isAuthen = !!localStorage.getItem('authToken'); // Proveravamo da li je korisnik ulogovan
+    const commentsVisible = ref({}); // Track visibility of comments per post
 
     const fetchPosts = async () => {
-  try {
-    const response = await axios.get('http://localhost:8080/api/posts/all');
-    const processedPosts = await Promise.all(
-      response.data
-        .filter(post => !post.isRemoved)
-        .map(async post => ({
-          ...post,
-          imagePath: `http://localhost:8080/images/${post.imagePath}`,
-          likesCount: await fetchLikesCount(post.id)
-        }))
-    );
-    
-    // Sortiranje postova po datumu kreiranja
-    posts.value = processedPosts.sort((a, b) => new Date(b.createdAt) - new Date(a.createdAt));
+      try {
+        const response = await axios.get('http://localhost:8080/api/posts/all');
+        const processedPosts = await Promise.all(
+          response.data
+            .filter(post => !post.isRemoved)
+            .map(async post => ({
+              ...post,
+              imagePath: `http://localhost:8080/images/${post.imagePath}`,
+              likesCount: await fetchLikesCount(post.id)
+            }))
+        );
+        
+        posts.value = processedPosts.sort((a, b) => new Date(b.createdAt) - new Date(a.createdAt));
 
-    // Učitaj korisnike za postove
-    processedPosts.forEach(post => {
-      fetchUser(post.userId);
-    });
-  } catch (error) {
-    console.error('Error fetching posts:', error);
-  }
-};
-
-
+        processedPosts.forEach(post => {
+          fetchUser(post.userId);
+        });
+      } catch (error) {
+        console.error('Error fetching posts:', error);
+      }
+    };
 
     const goBackToHome = () => {
       router.push('/');
     };
+
     const fetchLikesCount = async (postId) => {
       try {
         const response = await axios.get(`http://localhost:8080/api/posts/likesCount/${postId}`);
@@ -89,7 +90,6 @@ export default {
         return 0;
       }
     };
-
 
     const fetchUser = async (userId) => {
       if (!users.value[userId]) {
@@ -105,38 +105,34 @@ export default {
     const toggleMenu = (postId) => {
       menuOpen.value[postId] = !menuOpen.value[postId];
     };
+
     const viewComments = (postId) => {
-        console.log(`Viewing comments for post with ID: ${postId}`);
-        const authToken = localStorage.getItem('authToken');
-        console.log(authToken);
-        if (!authToken) {
-          alert("You cannot leave comments, you are not logged in!");
-          return;
-        }
+      const authToken = localStorage.getItem('authToken');
+      if (!authToken) {
+        alert("You cannot leave comments, you are not logged in!");
+        return;
+      }
+      commentsVisible.value[postId] = !commentsVisible.value[postId];
     };
+
     const goToProfile = (userId) => {
       router.push(`/profile/${userId}`);
-      };
-      const formatDate = (dateString) => {
-        const date = new Date(dateString);
-        const day = String(date.getDate()).padStart(2, '0');
-        const month = String(date.getMonth() + 1).padStart(2, '0');
-        const year = date.getFullYear();
-        const hours = String(date.getHours()).padStart(2, '0');
-        const minutes = String(date.getMinutes()).padStart(2, '0');
-        return `${day}/${month}/${year} ${hours}:${minutes}`;
-      };
-   
+    };
+
+    const formatDate = (dateString) => {
+      const date = new Date(dateString);
+      const day = String(date.getDate()).padStart(2, '0');
+      const month = String(date.getMonth() + 1).padStart(2, '0');
+      const year = date.getFullYear();
+      const hours = String(date.getHours()).padStart(2, '0');
+      const minutes = String(date.getMinutes()).padStart(2, '0');
+      return `${day}/${month}/${year} ${hours}:${minutes}`;
+    };
+
     const likePost = async (postId) => {
       const token = localStorage.getItem('authToken');
-        console.log(token);
-        if (!token) {
-          alert("You cannot like post, you are not logged in!");
-          return;
-        }
-
       if (!token) {
-        console.error('User not authenticated');
+        alert("You cannot like post, you are not logged in!");
         return;
       }
 
@@ -146,7 +142,6 @@ export default {
 
         if (postIndex !== -1) {
           const post = posts.value[postIndex];
-
           if (!post.likes) post.likes = [];
           if (post.likes.includes(userId)) {
             console.log("User has already liked this post.");
@@ -167,6 +162,12 @@ export default {
     };
 
     const openUpdateModal = (post) => {
+      const loggedInUserId = parseInt(localStorage.getItem('userId'));
+
+      if (post.userId !== loggedInUserId) {
+        alert('You do not have permission to edit this post.');
+        return;
+      }
       router.push({
         name: 'AddPost',
         query: {
@@ -179,59 +180,57 @@ export default {
         },
       });
     };
-  const deletePost = async (postId) => {
-    console.log(`Attempting to delete post with ID: ${postId}`);
-    const token = localStorage.getItem('authToken');
-    if (!token) {
-      console.error('User not authenticated');
-      return;
-    }
 
-    try {
-      const response = await axios.delete(`http://localhost:8080/api/posts/${postId}`, {
-        headers: { 'Authorization': `Bearer ${token}` }
-      });
-
-      if (response.status === 200) {
-        posts.value = posts.value.filter(post => post.id !== postId);
-        alert('Post deleted successfully.');
+    const deletePost = async (postId) => {
+      const token = localStorage.getItem('authToken');
+      if (!token) {
+        console.error('User not authenticated');
+        return;
       }
-    } catch (error) {
-      if (error.response && error.response.status === 403) {
-        alert('You do not have permission to delete this post.');
-      } else {
-        console.error('Error deleting post:', error);
+
+      try {
+        const response = await axios.delete(`http://localhost:8080/api/posts/${postId}`, {
+          headers: { 'Authorization': `Bearer ${token}` }
+        });
+
+        if (response.status === 200) {
+          posts.value = posts.value.filter(post => post.id !== postId);
+          alert('Post deleted successfully.');
+        }
+      } catch (error) {
+        if (error.response && error.response.status === 403) {
+          alert('You do not have permission to delete this post.');
+        } else {
+          console.error('Error deleting post:', error);
+        }
       }
-    }
-};
+    };
 
-const hidePost = async (postId) => {
-  const token = localStorage.getItem('authToken');
-  if (!token) {
-    console.error('User not authenticated');
-    return;
-  }
+    const hidePost = async (postId) => {
+      const token = localStorage.getItem('authToken');
+      if (!token) {
+        console.error('User not authenticated');
+        return;
+      }
 
-  try {
-    const response = await axios.put(`http://localhost:8080/api/posts/deleteLogically/${postId}`, null, {
-      headers: { 'Authorization': `Bearer ${token}` }
-    });
+      try {
+        const response = await axios.put(`http://localhost:8080/api/posts/deleteLogically/${postId}`, null, {
+          headers: { 'Authorization': `Bearer ${token}` }
+        });
 
-    if (response.status === 200) {
-      const postIndex = posts.value.findIndex(post => post.id === postId);
-      if (postIndex !== -1) posts.value.splice(postIndex, 1);
-      alert('Post hidden successfully.');
-    }
-  } catch (error) {
-    if (error.response && error.response.status === 403) {
-      alert('You do not have permission to hide this post.');
-    } else {
-      console.error('Error hiding post:', error);
-    }
-  }
-};
-
-
+        if (response.status === 200) {
+          const postIndex = posts.value.findIndex(post => post.id === postId);
+          if (postIndex !== -1) posts.value.splice(postIndex, 1);
+          alert('Post hidden successfully.');
+        }
+      } catch (error) {
+        if (error.response && error.response.status === 403) {
+          alert('You do not have permission to hide this post.');
+        } else {
+          console.error('Error hiding post:', error);
+        }
+      }
+    };
 
     onMounted(() => {
       fetchPosts();
@@ -251,6 +250,8 @@ const hidePost = async (postId) => {
       viewComments,
       goToProfile,
       formatDate,
+      isAuthen,
+      commentsVisible
     };
   },
 };

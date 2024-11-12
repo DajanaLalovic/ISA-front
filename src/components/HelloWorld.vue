@@ -8,6 +8,7 @@
         <router-link to="/login" class="nav-link" v-if="!isLoggedIn">Log in</router-link>
         <router-link to="/posts" class="nav-link" v-if="isLoggedIn">AddPost</router-link>
         <router-link to="/allPosts" class="nav-link">Posts</router-link>
+        <router-link to="/allUsers" class="nav-link" v-if="isAdmin">Users</router-link>
         <router-link :to="`/profile/${userId}`" class="nav-link" v-if="isLoggedIn">My Profile</router-link>
       </div>
     </nav>
@@ -36,6 +37,7 @@
 <script>
 
 
+import axios from 'axios';
 
 export default {
   name: 'HelloWorld',
@@ -47,15 +49,40 @@ export default {
       
       isLoggedIn: false ,
       userId: null,
+      userRole: null,
+
     };
   },
-
+  computed: {
+    isAdmin() {
+      return this.userRole === 'ADMIN';
+    },
+  },
   mounted() {
     const authStatus = localStorage.getItem('isLoggedIn');
     this.isLoggedIn = authStatus === 'true'; // Ako je ulogovan, status će biti 'true'
     console.log('Login status:', this.isLoggedIn);
     this.userId = localStorage.getItem('userId');
     console.log('User ID:', this.userId);
+    if (this.userId) {
+      const token = localStorage.getItem('authToken'); // Pretpostavka da je token sačuvan u localStorage
+
+        // Pozovite backend API da biste dobili userRole
+        axios.get(`http://localhost:8080/api/user/${this.userId}/role`,
+        {
+          headers: {
+            Authorization: `Bearer ${token}` // Ovdje se koristi token
+          }
+        })
+            .then(response => {
+                this.userRole = response.data;
+                console.log('User role:', this.userRole);
+            })
+            .catch(error => {
+                console.error("Error fetching user role:", error);
+            });
+    }
+
   }, 
   created() {
 

@@ -101,7 +101,7 @@
         confirmPassword: '',
         name: '',
         surname: '',
-        email: '',
+        email: '',        
       });
       onMounted(() => {
       if (localStorage.getItem('isLoggedIn') === 'true') {
