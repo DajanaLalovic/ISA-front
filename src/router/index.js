@@ -20,13 +20,11 @@ const routes = [
   {path: '/posts', name: 'AddPost', component: AddPost,  meta: { requiresAuth: true } },
   {path: '/profile/:userId', name: 'ProfileView',component: Profile},
   { path: '/allPosts', name: 'AllPosts', component: AllPosts },
-  { path: '/analitics', name: 'UsersAnalitics', component: UsersAnalitics},
-  {path: '/chat', name: 'UsersChat', component: UsersChat},
-  {path:'/nearPosts', name: 'NearPosts', component: NearPosts},
-  {path: '/followedPosts', name:'FollowedPosts', component:FollowedPosts},
+  { path: '/analitics', name: 'UsersAnalitics', component: UsersAnalitics,  meta: { requiresAuth: true }},
+  {path: '/chat', name: 'UsersChat', component: UsersChat,  meta: { requiresAuth: true }},
+  {path:'/nearPosts', name: 'NearPosts', component: NearPosts,  meta: { requiresAuth: true }},
+  {path: '/followedPosts', name:'FollowedPosts', component:FollowedPosts,  meta: { requiresAuth: true }},
   {path: '/allUsers', name:'AllUsers', component:AllUsers}
-
-
 ];
 
 const router = createRouter({

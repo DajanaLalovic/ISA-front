@@ -9,11 +9,20 @@
 <script>
 export default {
   name: 'App'
+  /*mounted() {
+    document.addEventListener('visibilitychange', () => {
+      if (document.visibilityState === 'hidden') {
+        localStorage.removeItem('authToken');
+        localStorage.removeItem('isLoggedIn');
+      }
+    });
+  }*/
 }
-window.addEventListener('beforeunload', () => {
+
+/*window.addEventListener('beforeunload', () => {
   localStorage.removeItem('authToken');
   localStorage.removeItem('isLoggedIn');
-});
+});*/
 </script>
 
 <style>
