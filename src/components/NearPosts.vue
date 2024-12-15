@@ -28,7 +28,14 @@
           <div v-if="commentsVisible[post.id]" class="comments-section">
             <p v-if="!post.comments || post.comments.length === 0">No comments yet.</p>
             <p v-else v-for="comment in post.comments" :key="comment.id" class="comment">{{ comment.text }}</p>
-          </div>
+
+           <!-- Forma za dodavanje komentara -->
+            <div class="add-comment">
+              <input  v-model="newComments[post.id]" type="text" placeholder="Add a comment..." class="comment-input"/>
+              <button @click="addComment(post.id)">Post Comment</button>
+           </div>
+        </div>
+
         </div>
       </div>
     </div>
@@ -49,6 +56,43 @@
       const posts = ref([]);
       const users = ref({});
       const commentsVisible = ref({});
+      const newComments = ref({});
+
+
+      
+    const addComment = async (postId) => {
+    const token = localStorage.getItem("authToken");
+    if (!token) {
+      alert("You need to be logged in to comment!");
+      return;
+    }
+
+    const commentText = newComments.value[postId];
+    if (!commentText || commentText.trim() === "") {
+      alert("Comment cannot be empty!");
+      return;
+    }
+
+    try {
+      const response = await axios.post(
+        "http://localhost:8080/api/comments",
+        { text: commentText, postId },
+        { headers: { Authorization: `Bearer ${token}` } }
+      );
+
+      // Ažurirajte listu komentara za post
+      const postIndex = posts.value.findIndex((post) => post.id === postId);
+      if (postIndex !== -1) {
+        posts.value[postIndex].comments.push(response.data);
+      }
+
+      // Očistite unos komentara
+      newComments.value[postId] = "";
+    } catch (error) {
+      console.error("Error adding comment:", error);
+      alert("Failed to add comment. Please try again.");
+    }
+  };
   
     const fetchPosts = async () => {
         try {
@@ -124,6 +168,7 @@
             return 0;
         }
         };
+
   
       const viewComments = (postId) => {
         commentsVisible.value[postId] = !commentsVisible.value[postId];
@@ -134,6 +179,7 @@
         return date.toLocaleString();
       };
   
+
       const goToProfile = (userId) => {
         router.push({ path: `/profile/${userId}` });
         };
@@ -150,8 +196,10 @@
         posts,
         users,
         commentsVisible,
+        newComments,
         likePost,
         viewComments,
+        addComment,
         formatDate,
         goToProfile,
         goBackToHome
@@ -278,6 +326,34 @@
 
 .return-button:hover {
   background-color: #e6c79c; /* Svetliji hover efekat */
+}
+.add-comment {
+  display: flex;
+  align-items: center;
+  margin-top: 10px;
+}
+
+.comment-input {
+  flex: 1;
+  padding: 8px;
+  font-size: 14px;
+  border: 1px solid #ffb347;
+  border-radius: 5px;
+  margin-right: 10px;
+}
+
+.add-comment button {
+  background-color: #ffb347;
+  color: white;
+  padding: 8px 12px;
+  border: none;
+  border-radius: 5px;
+  cursor: pointer;
+  font-weight: bold;
+}
+
+.add-comment button:hover {
+  background-color: #ffa64d;
 }
 
   </style>
