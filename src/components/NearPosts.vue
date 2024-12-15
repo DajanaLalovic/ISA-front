@@ -100,10 +100,11 @@
             const response = await axios.get("http://localhost:8080/api/posts/followed", {
             headers: { Authorization: `Bearer ${token}` },
             });
-
+            console.log("API response data:", response.data);
             const processedPosts = await Promise.all(
             response.data.map(async (post) => ({
                 ...post,
+                comments: post.comments || [],
                 imagePath: `http://localhost:8080/images/${post.imagePath}`,
                 likesCount: await fetchLikesCount(post.id), // Dobavljanje broja lajkova
             }))
