@@ -117,6 +117,16 @@
     } catch (error) {
         submitted.value = false;
         console.error("Greška pri prijavi:", error);
+
+        if (error.response?.status === 429) {
+      notification.value = {
+        msgType: 'error',
+        msgBody: 'Too many login attempts. Please try again later.',
+      };
+      return;
+    }
+
+
         const errorMessage = error.response?.data || 'Login error';
         notification.value = {
             msgType: 'error',
