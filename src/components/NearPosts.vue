@@ -89,10 +89,16 @@
       // Očistite unos komentara
       newComments.value[postId] = "";
     } catch (error) {
-      console.error("Error adding comment:", error);
+    console.error("Error adding comment:", error);
+
+    // Provera odgovora servera i prikaz odgovarajuće poruke
+    if (error.response && error.response.data) {
+      alert(error.response.data.message || "An error occurred while adding the comment.");
+    } else {
       alert("Failed to add comment. Please try again.");
     }
-  };
+  }
+};
   
     const fetchPosts = async () => {
         try {
