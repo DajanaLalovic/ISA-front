@@ -11,6 +11,7 @@ import UsersChat from '@/components/UsersChat.vue';
 import NearPosts from '@/components/NearPosts.vue';
 import FollowedPosts from '@/components/FollowedPosts.vue';
 import AllUsers from '@/components/AllUsers.vue';
+import TrendsDashboard from '@/components/TrendsDashboard.vue';
 
 const routes = [
   { path: '/', name: 'HelloWorld', component: HelloWorld },
@@ -24,7 +25,8 @@ const routes = [
   {path: '/chat', name: 'UsersChat', component: UsersChat,  meta: { requiresAuth: true }},
   {path:'/nearPosts', name: 'NearPosts', component: NearPosts,  meta: { requiresAuth: true }},
   {path: '/followedPosts', name:'FollowedPosts', component:FollowedPosts,  meta: { requiresAuth: true }},
-  {path: '/allUsers', name:'AllUsers', component:AllUsers}
+  {path: '/allUsers', name:'AllUsers', component:AllUsers},
+  {path: '/trends', name:'TrendsDashboard', component:TrendsDashboard}
 ];
 
 const router = createRouter({
