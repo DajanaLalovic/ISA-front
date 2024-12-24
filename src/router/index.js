@@ -12,6 +12,7 @@ import NearPosts from '@/components/NearPosts.vue';
 import FollowedPosts from '@/components/FollowedPosts.vue';
 import AllUsers from '@/components/AllUsers.vue';
 import TrendsDashboard from '@/components/TrendsDashboard.vue';
+import UserMap from '@/components/UserMap.vue';
 
 const routes = [
   { path: '/', name: 'HelloWorld', component: HelloWorld },
@@ -26,7 +27,8 @@ const routes = [
   {path:'/nearPosts', name: 'NearPosts', component: NearPosts,  meta: { requiresAuth: true }},
   {path: '/followedPosts', name:'FollowedPosts', component:FollowedPosts,  meta: { requiresAuth: true }},
   {path: '/allUsers', name:'AllUsers', component:AllUsers},
-  {path: '/trends', name:'TrendsDashboard', component:TrendsDashboard}
+  {path: '/trends', name:'TrendsDashboard', component:TrendsDashboard},
+  {path: '/userMap/:userId', name:'UserMap', component:UserMap}
 ];
 
 const router = createRouter({
