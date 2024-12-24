@@ -1,9 +1,8 @@
 <template>
-  <div v-if="user">
-    <div class="profile-container">
-      <div class="profile-header">
-      <!-- <img src="@/assets/ikonica.jpeg" alt="User Image" class="profile-image" />-->
-      <div class="profile-username">{{ user.username }}</div> 
+  <div v-if="user" class="profile-container">
+    <div class="profile-header">
+      <img src="@/assets/ikonica.jpeg" alt="User Image" class="profile-image" />
+      <div class="profile-username">{{ user.username }}</div>
     </div>
     <hr class="profile-divider" />
     <div class="profile-info">
@@ -12,9 +11,6 @@
       </div>
       <div class="profile-item">
         <strong>Last Name:</strong> <span>{{ user.surname }}</span>
-      </div>
-      <div class="profile-item">
-        <strong>Username:</strong> <span>{{ user.username }}</span>
       </div>
       <div class="profile-item">
         <strong>Email:</strong> <span>{{ user.email }}</span>
@@ -27,7 +23,7 @@
             🌎{{ user.address.country }},{{  user.address.city }} 📬{{ user.address.postalCode }}</span>
       </div>
       <div class="profile-item">
-        <strong>Followers:</strong> <span>{{ user.followingCount }}</span>
+        <strong>Followers:</strong> <span>{{ user.followersCount }}</span>
       </div>
       <div>
        
@@ -52,8 +48,14 @@
         <button @click="updatePassword">Update Password</button>
       </div>
       <hr class="profile-divider" />
+
+    <!-- Dugmad za follow/unfollow i return -->
     <div class="profile-footer">
-      <button class="follow-button">Follow</button>
+      <div v-if="currentUserId !== user.id">
+        <button v-if="!isFollowing" @click="followUser" class="follow-button">Follow</button>
+        <button v-else @click="unfollowUser" class="unfollow-button">Unfollow</button>
+      </div>
+      <button @click="returnToHome" class="return-button">Return</button>
     </div>
         <!-- <div class="password-change">
       <h2>Change Password</h2>
@@ -93,26 +95,24 @@
     </div>
   </div>
   </div>
-  </div>
-  <div v-else class="loading-message">
-    <p>Loading user data...</p>
-  </div>
+
 </template>
 
 <script>
-import axios from 'axios';
-import { ref, computed,onMounted } from 'vue';
-import { useRoute } from 'vue-router';
+import axios from "axios";
+import { ref, computed,onMounted } from "vue";
+import { useRoute } from "vue-router";
 import { useRouter } from 'vue-router';
 
 export default {
-  name: 'ProfileView',
+  name: "ProfileView",
   setup() {
     const user = ref(null);
+    const isFollowing = ref(false);
     const route = useRoute();
     const router = useRouter();
-    const userId = route.params.userId;
-    console.log('User ID:', userId);
+    const userId = parseInt(route.params.userId); // ID korisnika čiji profil gledamo
+    const currentUserId = parseInt(localStorage.getItem("userId")); // ID trenutnog korisnika
     const newPassword = ref('');
     const confirmPassword = ref('');
     const isChangingPassword = ref(false);
@@ -136,15 +136,98 @@ export default {
       confirmPasswordError.value = false;
     };
 
+    // Učitavanje profila korisnika
     const fetchUserProfile = async () => {
       try {
-        const response = await axios.get(`http://localhost:8080/api/profile/${userId}`, {
-          // Uncomment the line below if authentication token is required
-         // headers: { Authorization: `Bearer ${localStorage.getItem('token')}` }
-        });
+        const token = localStorage.getItem("authToken");
+        const response = await axios.get(
+          `http://localhost:8080/api/profile/${userId}`,
+          {
+            headers: { Authorization: `Bearer ${token}` },
+          }
+        );
         user.value = response.data;
+
+        // Provera da li trenutni korisnik prati cilj korisnika
+        isFollowing.value = user.value.followers?.includes(currentUserId);
+        await fetchPosts();
       } catch (error) {
-        console.error('Error loading profile: ', error);
+        console.error("Error loading profile: ", error);
+      }
+    };
+
+    // Funkcija za Follow
+    const followUser = async () => {
+      const token = localStorage.getItem("authToken");
+
+      if (!token || !currentUserId) {
+        alert("You are not logged in!");
+        return;
+      }
+
+      try {
+        await axios.post(
+          `http://localhost:8080/api/follow/${userId}`,
+          {},
+          {
+            headers: { Authorization: `Bearer ${token}` },
+          }
+        );
+        // isFollowing.value = true; // Ažuriraj stanje nakon Follow
+        alert("You are now following this user.");
+        
+        await fetchUserProfile(); // Osveži podatke o korisniku
+        isFollowing.value = true; // Ažuriraj stanje nakon Follow
+      } catch (error) {
+        console.error("Error following user:", error);
+        if (error.response && error.response.status === 429) {
+          alert("You have exceeded the follow limit. Please wait a minute.");
+        } else {
+          alert("Failed to follow user.");
+        }
+      }
+    };
+    const checkIfFollowing = async () => {
+      const token = localStorage.getItem("authToken");
+
+      if (!token || !currentUserId) {
+        console.error("You are not logged in!");
+        return;
+      }
+
+      try {
+        const response = await axios.get(
+          `http://localhost:8080/api/follow/status/${userId}`,
+          {
+            headers: { Authorization: `Bearer ${token}` },
+          }
+        );
+        isFollowing.value = response.data; // Rezultat provere
+      } catch (error) {
+        console.error("Error checking follow status:", error);
+      }
+    };
+
+
+    // Funkcija za Unfollow
+    const unfollowUser = async () => {
+      const token = localStorage.getItem("authToken");
+
+      if (!token || !currentUserId) {
+        alert("You are not logged in!");
+        return;
+      }
+
+      try {
+        await axios.delete(`http://localhost:8080/api/unfollow/${userId}`, {
+          headers: { Authorization: `Bearer ${token}` },
+        });
+        isFollowing.value = false; // Ažuriraj stanje nakon Unfollow
+        alert("You have unfollowed this user.");
+        await fetchUserProfile(); // Osveži podatke o korisniku
+      } catch (error) {
+        console.error("Error unfollowing user:", error);
+        alert("Failed to unfollow user.");
       }
     };
 
@@ -253,7 +336,6 @@ const toggleMenu = (postId) => {
         console.error('Error hiding post:', error);
       }
     };
-
     const viewComments = (postId) => {
       commentsVisible.value[postId] = !commentsVisible.value[postId]; // Prikazivanje/sakrivanje komentara
     };
@@ -289,13 +371,25 @@ const toggleMenu = (postId) => {
     };
 
 
+    // Funkcija za povratak na početnu stranicu
+    const returnToHome = () => {
+      window.location.href = "http://localhost:8081/allPosts";
+    };
+
+    // Kada se komponenta montira, učitava se profil korisnika
     onMounted(() => {
       fetchUserProfile();
-      fetchPosts();
+      checkIfFollowing(); //mora da bude za automatski follow ili unfollow
+      // fetchPosts();
     });
 
     return {
       user,
+      isFollowing,
+      followUser,
+      unfollowUser,
+      returnToHome,
+      currentUserId,
       newPassword,
       confirmPassword,
       isChangingPassword,
@@ -316,9 +410,10 @@ const toggleMenu = (postId) => {
       formatDate,
       isAuthen
     };
-  }
+  },
 };
 </script>
+
 <style scoped>
 .profile-container-right {
   position: fixed;
@@ -577,4 +672,34 @@ h1 {
   font-size: 14px;
   color: #040404;
   }
+.profile-footer {
+  position: absolute;
+  bottom: 20px;
+  left: 50%;
+  transform: translateX(-50%);
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+}
+
+.follow-button,
+.unfollow-button,
+.return-button {
+  background-color: #ff9f43;
+  color: #fff;
+  border: none;
+  padding: 8px 16px;
+  border-radius: 20px;
+  font-size: 14px;
+  font-weight: bold;
+  cursor: pointer;
+  transition: background-color 0.3s ease;
+  margin-top: 10px;
+}
+
+.follow-button:hover,
+.unfollow-button:hover,
+.return-button:hover {
+  background-color: #e67e22;
+}
 </style>

@@ -118,7 +118,9 @@
       response.data.top5Last7Days.map(async post => ({
         ...post,
         imagePath: `http://localhost:8080/images/${post.imagePath}`,
-        likesCount: await fetchLikesCount(post.id)
+        likesCount: await fetchLikesCount(post.id),
+        comments: []
+
       }))
     );
     top5Last7Days.value = processedTop5;
@@ -127,7 +129,8 @@
       response.data.top10AllTime.map(async post => ({
         ...post,
         imagePath: `http://localhost:8080/images/${post.imagePath}`,
-        likesCount: await fetchLikesCount(post.id)
+        likesCount: await fetchLikesCount(post.id),
+        comments: []
       }))
     );
     top10AllTime.value= processedTop10;

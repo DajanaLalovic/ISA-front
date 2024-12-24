@@ -28,7 +28,7 @@
     <div class="links-container">
       <router-link to="/analitics" class="link" v-if="isLoggedIn">User Analytics</router-link>
       <router-link to="/chat" class="link" v-if="isLoggedIn">User Chat</router-link>
-      <router-link to="/nearPosts" class="link" v-if="isLoggedIn">Near Posts</router-link>
+      <router-link to="/nearPosts" class="link" v-if="isLoggedIn">Posts from followers</router-link>
       <router-link to="/followedPosts" class="link" v-if="isLoggedIn">Followed Posts</router-link>
 
       <router-link to="/trends" class="link" v-if="isLoggedIn">Trends Dashboard</router-link>

@@ -1,185 +1,175 @@
 <template>
-    <div class="background-container">
-      <div class="all-users-container">
-        <button @click="goToHome" class="return-button">Return</button>
-        <h1>All Registered Users</h1>
-  
-        <div class="filters">
-          <input v-model="searchCriteria.name" placeholder="Search by name" class="filter-input" />
-          <input v-model="searchCriteria.surname" placeholder="Search by surname" class="filter-input" />
-          <input v-model="searchCriteria.email" placeholder="Search by email" class="filter-input" />
-          <input v-model.number="searchCriteria.minPostCount" type="number" placeholder="Min post count" class="filter-input" />
-          <input v-model.number="searchCriteria.maxPostCount" type="number" placeholder="Max post count" class="filter-input" />
-          <select v-model="searchCriteria.sortBy" class="filter-select">
-            <option value="">Sort by</option>
-            <option value="followingCount">Following Count</option>
-            <option value="email">Email</option>
-          </select>
-          <select v-model="searchCriteria.sortOrder" class="filter-select">
-            <option value="asc">Ascending</option>
-            <option value="desc">Descending</option>
-          </select>
-  
-          <button @click="applyFilters" class="cta-button">Apply Filters</button>
-          <button @click="resetFilters" class="cta-button reset-button">Reset Filters</button>
-        </div>
-  
-        <div v-if="filteredUsers.length === 0" class="no-users-message">
-          There are no registered users.
-        </div>
-  
-        <table v-else class="user-table">
-          <thead>
-            <tr>
-              <th>Name</th>
-              <th>Surname</th>
-              <th>Email</th>
-              <th>Post Count</th>
-              <th>Following Count</th>
-            </tr>
-          </thead>
-          <tbody>
-            <tr
-              v-for="user in paginatedUsers"
-              :key="user.id"
-              :style="isCurrentUser(user.id) ? { fontWeight: 'bold' } : {}"
-            >
-              <td>{{ user.name }}</td>
-              <td>{{ user.surname }}</td>
-              <td>{{ user.email }}</td>
-              <td>{{ user.postCount }}</td>
-              <td>{{ user.followingCount }}</td>
-            </tr>
-          </tbody>
-        </table>
-  
-        <div class="pagination-controls">
-          <button @click="previousPage" :disabled="currentPage === 1">Previous</button>
-          <button @click="nextPage" :disabled="currentPage === totalPages">Next</button>
-        </div>
+  <div class="background-container">
+    <div class="all-users-container">
+      <button @click="goToHome" class="return-button">Return</button>
+      <h1>All Registered Users</h1>
+
+      <div class="filters">
+        <input v-model="searchCriteria.name" placeholder="Search by name" class="filter-input" />
+        <input v-model="searchCriteria.surname" placeholder="Search by surname" class="filter-input" />
+        <input v-model="searchCriteria.email" placeholder="Search by email" class="filter-input" />
+        <input v-model.number="searchCriteria.minPostCount" type="number" placeholder="Min post count" class="filter-input" />
+        <input v-model.number="searchCriteria.maxPostCount" type="number" placeholder="Max post count" class="filter-input" />
+        <select v-model="searchCriteria.sortBy" class="filter-select">
+          <option value="">Sort by</option>
+          <option value="followingCount">Following Count</option>
+          <option value="email">Email</option>
+        </select>
+        <select v-model="searchCriteria.sortOrder" class="filter-select">
+          <option value="asc">Ascending</option>
+          <option value="desc">Descending</option>
+        </select>
+
+        <button @click="applyFilters" class="cta-button">Apply Filters</button>
+        <button @click="resetFilters" class="cta-button reset-button">Reset Filters</button>
+      </div>
+
+      <div v-if="users.length === 0" class="no-users-message">
+        There are no registered users.
+      </div>
+
+      <table v-else class="user-table">
+        <thead>
+          <tr>
+            <th>Name</th>
+            <th>Surname</th>
+            <th>Email</th>
+            <th>Post Count</th>
+            <th>Following Count</th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr
+            v-for="user in users"
+            :key="user.id"
+            :style="isCurrentUser(user.id) ? { fontWeight: 'bold' } : {}"
+          >
+            <td>{{ user.name }}</td>
+            <td>{{ user.surname }}</td>
+            <td>{{ user.email }}</td>
+            <td>{{ user.postCount }}</td>
+            <td>{{ user.followingCount }}</td>
+          </tr>
+        </tbody>
+      </table>
+
+      <div class="pagination-controls">
+        <button @click="previousPage" :disabled="currentPage === 1">Previous</button>
+        <span>Page {{ currentPage }} of {{ totalPages }}</span>
+        <button @click="nextPage" :disabled="currentPage === totalPages">Next</button>
       </div>
     </div>
-  </template>
-  
-  <script>
-  import axios from 'axios';
-  
-  export default {
-    name: 'AllUsers',
-    data() {
-      return {
-        users: [],
-        currentPage: 1,
-        usersPerPage: 5,
-        loggedInUserId: localStorage.getItem('userId'),
-        searchCriteria: {
-          name: '',
-          surname: '',
-          email: '',
-          minPostCount: null,
-          maxPostCount: null,
-          sortBy: '',
-          sortOrder: 'asc'
-        }
+  </div>
+</template>
+
+<script>
+import axios from 'axios';
+
+export default {
+  name: 'AllUsers',
+  data() {
+    return {
+      users: [],
+      currentPage: 1,
+      usersPerPage: 5,
+      totalPages: 0,
+      loggedInUserId: localStorage.getItem('userId'),
+      searchCriteria: {
+        name: '',
+        surname: '',
+        email: '',
+        minPostCount: null,
+        maxPostCount: null,
+        sortBy: '',
+        sortOrder: 'asc'
+      }
+    };
+  },
+  methods: {
+    isCurrentUser(userId) {
+      return userId == this.loggedInUserId;
+    },
+    goToHome() {
+      this.$router.push('/');
+    },
+    async applyFilters() {
+  try {
+    const token = localStorage.getItem('authToken');
+    console.log("Token:", token); // Proveri token
+
+    if (!token) {
+      console.error('No auth token found, unable to fetch users');
+      return;
+    }
+
+    const params = {
+      name: this.searchCriteria.name || undefined,
+      surname: this.searchCriteria.surname || undefined,
+      email: this.searchCriteria.email || undefined,
+      minPostCount: this.searchCriteria.minPostCount || undefined,
+      maxPostCount: this.searchCriteria.maxPostCount || undefined,
+      sortBy: this.searchCriteria.sortBy || undefined,
+      sortOrder: this.searchCriteria.sortOrder || undefined,
+      page: this.currentPage - 1,
+      size: this.usersPerPage
+    };
+    console.log('Params:', params); 
+
+
+    const response = await axios.get('http://localhost:8080/api/user/search', {
+      headers: {
+        Authorization: `Bearer ${token}`
+      },
+      params
+    });
+
+    console.log("Response headers:", response.headers); 
+    console.log("Response data:", response.data); 
+    this.users = response.data;
+    const totalUsers = parseInt(response.headers['x-total-count'], 10);
+if (!isNaN(totalUsers)) {
+    this.totalPages = Math.ceil(totalUsers / this.usersPerPage);
+} else {
+    this.totalPages = 0;
+}
+    this.totalPages = Math.ceil(totalUsers / this.usersPerPage);
+    console.log("Total users:", totalUsers, "Total pages:", this.totalPages); 
+  } catch (error) {
+    console.error('Error fetching filtered users:', error);
+  }
+}
+,
+    previousPage() {
+      if (this.currentPage > 1) {
+        this.currentPage--;
+        this.applyFilters();
+      }
+    },
+    nextPage() {
+      if (this.currentPage < this.totalPages) {
+        this.currentPage++;
+        this.applyFilters();
+      }
+    },
+    async resetFilters() {
+      this.searchCriteria = {
+        name: '',
+        surname: '',
+        email: '',
+        minPostCount: null,
+        maxPostCount: null,
+        sortBy: '',
+        sortOrder: 'asc'
       };
-    },
-    computed: {
-      totalPages() {
-        return Math.ceil(this.filteredUsers.length / this.usersPerPage);
-      },
-      paginatedUsers() {
-        const startIndex = (this.currentPage - 1) * this.usersPerPage;
-        return this.filteredUsers.slice(startIndex, startIndex + this.usersPerPage);
-      },
-      filteredUsers() {
-        return this.users; 
-      }
-    },
-    methods: {
-      isCurrentUser(userId) {
-        return userId == this.loggedInUserId;
-      },
-      goToHome() {
-        this.$router.push('/');
-      },
-      async applyFilters() {
-        try {
-          const token = localStorage.getItem('authToken');
-          if (!token) {
-            console.error('No auth token found, unable to fetch users');
-            return;
-          }
-  
-          const params = {
-            name: this.searchCriteria.name || undefined,
-            surname: this.searchCriteria.surname || undefined,
-            email: this.searchCriteria.email || undefined,
-            minPostCount: this.searchCriteria.minPostCount || undefined,
-            maxPostCount: this.searchCriteria.maxPostCount || undefined,
-            sortBy: this.searchCriteria.sortBy || undefined,
-            sortOrder: this.searchCriteria.sortOrder || undefined
-          };
-  
-          const response = await axios.get('http://localhost:8080/api/user/search', {
-            headers: {
-              Authorization: `Bearer ${token}`
-            },
-            params
-          });
-  
-          const usersData = response.data;
-  
-          this.users = await this.fetchPostCountsForUsers(usersData, token);
-        } catch (error) {
-          console.error('Error fetching filtered users:', error);
-        }
-      },
-      async fetchPostCountsForUsers(usersData, token) {
-        return await Promise.all(
-          usersData.map(async (user) => {
-            try {
-              const postCountResponse = await axios.get(`http://localhost:8080/api/user/postCount/${user.id}`, {
-                headers: {
-                  Authorization: `Bearer ${token}`
-                }
-              });
-  
-              return {
-                ...user,
-                postCount: postCountResponse.data,
-                followingCount: user.followingCount || 0
-              };
-            } catch (error) {
-              console.error(`Error fetching post count for user ${user.id}:`, error);
-              return { ...user, postCount: 0, followingCount: 0 };
-            }
-          })
-        );
-      },
-      previousPage() {
-        if (this.currentPage > 1) this.currentPage--;
-      },
-      nextPage() {
-        if (this.currentPage < this.totalPages) this.currentPage++;
-      },
-      async resetFilters() {
-        this.searchCriteria = {
-          name: '',
-          surname: '',
-          email: '',
-          minPostCount: null,
-          maxPostCount: null,
-          sortBy: '',
-          sortOrder: 'asc'
-        };
-        await this.applyFilters();
-      }
-    },
-    async mounted() {
+      this.currentPage = 1;
       await this.applyFilters();
     }
-  };
-  </script>
+  },
+  async mounted() {
+    await this.applyFilters();
+  }
+};
+</script>
   
   <style scoped>
   .pagination-controls {
