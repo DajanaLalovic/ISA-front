@@ -1,54 +1,44 @@
 <template>
-  <div class="content">
-    <div class="post-card">
-      <h2>{{ isUpdating ? 'Update Post' : 'Add New Post' }}</h2>
+  <div class="form-container">
+    <!-- Leva strana sa slikom -->
+    <div class="image-section">
+      <img src="@/assets/mrkvice.jpg" alt="Post Image" class="post-image" />
+    </div>
+
+    <!-- Desna strana sa formom -->
+    <div class="form-section">
+      <h1>{{ isUpdating ? 'Update Post' : 'Add New Bunny Post' }}</h1>
       <form @submit.prevent="onSubmitPost" v-if="!submitted">
         <label>
           Description:
-          <textarea
-            v-model="form.description"
-            required
-            placeholder="Write something about your post"
-          ></textarea>
+          <textarea v-model="form.description" required placeholder="Write something about your post"></textarea>
         </label>
-        <label>
-          <div v-if="isUpdating && form.imagePath">
-            <p>Current image:</p>
-            <img :src="form.imagePath" alt="Current image" class="current-image" />
+
+        <label class="upload-label">
+          Upload a photo:
+          <div class="upload-container">
+            <input type="file" id="file-input" @change="onFileChange" accept="image/*" hidden />
+            <label for="file-input" class="upload-icon">📷 Choose File</label>
           </div>
-          Choose new photo:
-          <input
-            type="file"
-            @change="onFileChange"
-            accept="image/*"
-            :required="!isUpdating"
-          />
         </label>
+
+        <!-- Mapa za odabir lokacije -->
         <div id="map" class="map"></div>
+
         <label>
           Latitude:
-          <input
-            type="number"
-            step="0.000001"
-            v-model="form.latitude"
-            required
-            placeholder="Latitude"
-          />
+          <input type="number" step="0.000001" v-model="form.location.latitude" required placeholder="Latitude" />
         </label>
         <label>
           Longitude:
-          <input
-            type="number"
-            step="0.000001"
-            v-model="form.longitude"
-            required
-            placeholder="Longitude"
-          />
+          <input type="number" step="0.000001" v-model="form.location.longitude" required placeholder="Longitude" />
         </label>
-        
-        <button :disabled="!isFormValid" type="submit">{{ isUpdating ? 'Update' : 'Add' }} Post</button>
+
+        <div class="button-group">
+          <button type="button" class="back-button" @click="goBack">Back</button>
+          <button :disabled="!isFormValid" type="submit" class="next-button">{{ isUpdating ? 'Update' : 'Add' }} Post</button>
+        </div>
       </form>
-      <div v-if="submitted" class="loading">Loading...</div>
     </div>
   </div>
 </template>
@@ -71,12 +61,12 @@ export default {
     const route = useRoute();
     const submitted = ref(false);
     const isUpdating = ref(false);
+   
 
     const form = ref({
       id: null, // Dodato samo za azuriranje
       description: '',
-      latitude: '',
-      longitude: '',
+      location: { latitude: '', longitude: '' },
       imageBase64: '', 
       imagePath: '', // URL  isto za azuriranje
 
@@ -88,24 +78,30 @@ export default {
         isUpdating.value = true;
         form.value.id = route.query.id;
         form.value.description = route.query.description || '';
-        form.value.latitude = route.query.latitude || '';
-        form.value.longitude = route.query.longitude || '';
+        form.value.location = {
+        latitude: route.query.location?.latitude || '',
+        longitude: route.query.location?.longitude || ''
+        };
         form.value.imageBase64 = route.query.imageBase64 || ''; 
         form.value.createdAt = route.query.createdAt || ''; 
         form.value.imagePath = route.query.imagePath || ''; 
-        if (form.value.latitude && form.value.longitude) {
-        map.getView().setCenter(fromLonLat([form.value.longitude, form.value.latitude]));
+        if (form.value.location.latitude && form.value.location.longitude) {
+        map.getView().setCenter(fromLonLat([form.value.location.longitude, form.value.location.latitude]));
         map.getView().setZoom(15); // Podesi nivo zumiranja po želji
     }
+
+   
       }
     });
+
+   
 
     const isFormValid = computed(() => {
       return (
         form.value.description &&
         (form.value.imageBase64 || isUpdating.value) && 
-        form.value.latitude &&
-        form.value.longitude
+        form.value.location.latitude &&
+        form.value.location.longitude
       );
     });
 
@@ -178,11 +174,14 @@ export default {
 
       map.on('click', (event) => {
         const coordinate = toLonLat(event.coordinate);
-        form.value.latitude = coordinate[1].toFixed(6);
-        form.value.longitude = coordinate[0].toFixed(6);
-        console.log(`Latitude: ${form.value.latitude}, Longitude: ${form.value.longitude}`);
+        form.value.location.latitude = coordinate[1].toFixed(6);
+        form.value.location.longitude = coordinate[0].toFixed(6);
+        console.log(`Latitude: ${form.value.location.latitude}, Longitude: ${form.value.location.longitude}`);
       });
     }
+    const goBack = () => {
+  router.push('/'); // Promeni rutu ako treba
+};
 
     return {
       submitted,
@@ -191,48 +190,85 @@ export default {
       onFileChange,
       onSubmitPost,
       isUpdating, 
-      initializeMap
+      initializeMap,
+      goBack
     };
   },
 };
 </script>
 <style scoped>
-.content {
+
+
+.form-container {
   display: flex;
+  width: 70vw; /* Smanjena širina */
+  height: auto;
+  margin: 40px auto; 
+  border-radius: 10px;
+  overflow: hidden;
+  background: #ffcc80;
+  box-shadow: 0 4px 10px rgba(0, 0, 0, 0.1);
+  align-items: center;
+  justify-content: center;
+  border: 3px solid #ff9800;
+  /* padding: 20px; */
+}
+
+.image-section {
+  background: #ff9800;
+  flex: 1.5;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  height: 100%;
+}
+
+.post-image {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  border-radius: 0;
+}
+
+.form-section {
+  flex: 2;
+  padding: 43px;
+  background: #ffe0b2;
+  display: flex;
+  flex-direction: column;
   justify-content: center;
   align-items: center;
-  margin-top: 40px;
+  height: 100%;
+  overflow-y: auto;
 }
 
-.post-card {
-  background-color: #f9f9f9;
-  padding: 20px;
-  border-radius: 12px;
-  box-shadow: 0 2px 10px rgba(0, 0, 0, 0.1);
-  max-width: 600px;
-  width: 100%;
-}
-
-h2 {
-  font-size: 24px;
-  margin-bottom: 20px;
+h1 {
   text-align: center;
   color: #333;
+  margin-bottom: 10px;
+}
+
+form {
+  width: 100%;
+  max-width: 550px;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
 }
 
 form label {
   display: block;
-  margin-bottom: 15px;
+  width: 100%;
+  margin: 5px 0;
   font-weight: bold;
   color: #555;
 }
 
-form textarea,
-form input[type="file"],
-form input[type="number"] {
+textarea,
+input {
   width: 100%;
-  padding: 10px;
-  margin-top: 5px;
+  padding: 8px;
+  margin-top: 3px;
   border: 1px solid #ccc;
   border-radius: 6px;
   background-color: #fff;
@@ -240,53 +276,66 @@ form input[type="number"] {
   font-size: 14px;
 }
 
-form textarea {
-  resize: vertical;
-  min-height: 100px;
-}
-
-form button {
-  background-color: #007bff;
-  color: #fff;
-  padding: 10px 15px;
-  border: none;
-  border-radius: 6px;
+.upload-container {
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  border: 2px dashed #ff7043;
+  padding: 8px;
+  border-radius: 8px;
   cursor: pointer;
-  transition: background-color 0.3s ease;
-  font-size: 16px;
+  text-align: center;
+  background: #fff;
+  color: #ff7043;
+  font-weight: bold;
   width: 100%;
 }
 
-form button:disabled {
-  background-color: #ccc;
-  cursor: not-allowed;
+.upload-container:hover {
+  background: #ffcc80;
 }
 
-form button:hover:not(:disabled) {
-  background-color: #0056b3;
+.upload-icon {
+  cursor: pointer;
 }
 
-.loading {
-  font-size: 18px;
+.button-group {
+  display: flex;
+  justify-content: space-between;
+  width: 100%;
+  margin-top: 10px;
+}
+
+.back-button,
+.next-button {
+  padding: 8px 12px;
+  border: none;
+  border-radius: 6px;
+  cursor: pointer;
+  font-size: 14px;
+  width: 45%;
   text-align: center;
+}
+
+.back-button {
+  background-color: #ccc;
   color: #333;
-  margin-top: 20px;
+}
+
+.next-button {
+  background-color: #ff5722;
+  color: white;
+}
+
+.next-button:disabled {
+  background-color: #ccc;
 }
 
 .map {
   width: 100%;
-  height: 400px;
-  margin: 20px 0;
+  height: 250px;
+  margin: 5px 0;
   border: 1px solid #ccc;
   border-radius: 6px;
 }
-
-.current-image {
-  display: block;
-  margin: 10px auto;
-  max-width: 100%;
-  height: auto;
-  border-radius: 8px;
-}
 </style>
-
