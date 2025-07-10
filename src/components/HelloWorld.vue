@@ -6,6 +6,7 @@
       <div class="nav-links">
         <router-link to="/signup" class="nav-link" v-if="!isLoggedIn">Sign up</router-link>
         <router-link to="/login" class="nav-link" v-if="!isLoggedIn">Log in</router-link>
+        <router-link :to="`/usermap/${userId}`" class="nav-link" v-if="isLoggedIn">Map</router-link>
         <router-link to="/posts" class="nav-link" v-if="isLoggedIn">AddPost</router-link>
         <router-link to="/allPosts" class="nav-link">Posts</router-link>
         <router-link to="/allUsers" class="nav-link" v-if="isAdmin">Users</router-link>

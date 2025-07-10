@@ -41,6 +41,66 @@
       };
     },
     methods: {
+      async fetchLocations() {
+    try {
+      const token = localStorage.getItem('authToken'); // Preuzmi token iz localStorage ili gde god ga čuvaš
+    const response = await axios.get('http://localhost:8080/api/locationMessage/all', {
+      headers: {
+        'Content-Type': 'application/json', // Specifikacija tipa sadržaja
+        'Authorization': `Bearer ${token}`, // Token za autentifikaciju
+      },
+    });
+      const locations = response.data;
+
+      for (const location of locations) {
+        const address = `${location.street} ${location.number}, ${location.city}, ${location.postalCode}, ${location.country}`;
+        const coordinates = await this.getCoordinatesFromAddress(address);
+        this.addHospitalMarker(coordinates.latitude, coordinates.longitude, location.name);
+      }
+    } catch (error) {
+      console.error('Error fetching locations:', error);
+    }
+  },
+
+  // Dodaj stiker bolnice na mapu
+  // addHospitalMarker(lat, lon, name) {
+  //   const markerElement = document.createElement("div");
+  //   markerElement.className = "hospital-marker";
+  //   markerElement.title = name;
+  //   markerElement.innerHTML = `
+  //     🏥 <p>${name}</p>
+  //   `;
+  //   markerElement.style.cursor = "pointer";
+
+  //   const marker = new Overlay({
+  //     position: fromLonLat([lon, lat]),
+  //     positioning: "center-center",
+  //     element: markerElement,
+  //     stopEvent: false,
+  //   });
+
+  //   this.map.addOverlay(marker);
+  // },
+
+  addHospitalMarker(lat, lon, name) {
+  const markerElement = document.createElement("div");
+  markerElement.className = "hospital-marker";
+  markerElement.innerHTML = `
+    <span class="hospital-icon">🏥</span>
+    <div class="hospital-name">🐾${name}🐇</div>
+  `;
+  markerElement.style.cursor = "pointer";
+
+  const marker = new Overlay({
+    position: fromLonLat([lon, lat]),
+    positioning: "center-center",
+    element: markerElement,
+    stopEvent: false,
+  });
+
+  this.map.addOverlay(marker);
+},
+
       // Fetch user profile with coordinates
       async fetchUserProfile(userId) {
         try {
@@ -113,7 +173,7 @@
     async fetchPosts(userId) {
     try {
         const response = await axios.get('http://localhost:8080/api/posts/all');
-       console.log('bejvfrefjbvchke');
+      
         console.log(userId);
         // Pretpostavljamo da je trenutni userId sačuvan u this.currentUserId
      // Trebalo bi da postaviš ovaj userId negde u kodu
@@ -178,6 +238,7 @@
   
         // Add user marker
         this.addUserMarker();
+       
       },
   
       // Add a marker for the user's location
@@ -231,6 +292,7 @@
       const userId = route.params.userId;
       await this.fetchUserProfile(userId);
       await this.fetchPosts(userId); // Fetch posts after the user profile is loaded
+      await this.fetchLocations();
     },
   };
   </script>
@@ -241,6 +303,34 @@
     flex-direction: column;
     align-items: center;
   }
+  .hospital-marker {
+  position: relative; /* Postavlja marker kao referentni kontejner */
+}
+
+.hospital-icon {
+  font-size: 16px; /* Veličina ikonice bolnice */
+}
+
+.hospital-name {
+  position: absolute; /* Apsolutno pozicioniranje unutar markera */
+  top: -20px; /* Postavi ime iznad ikonice */
+  left: 50%; /* Centriraj ime horizontalno */
+  transform: translateX(-50%); /* Poravnaj centar teksta sa centrom ikonice */
+  font-size: 15px; /* Veličina fonta */
+  color: red; /* Crvena boja teksta */
+  background-color: white; /* Pozadina bele boje za bolju vidljivost */
+  padding: 2px 5px; /* Dodaj padding oko teksta */
+  border-radius: 3px; /* Zaobljeni uglovi */
+  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.2); /* Blaga senka ispod teksta */
+  white-space: nowrap; /* Sprečava prelamanje teksta */
+  display: none; /* Sakrij tekst dok nije hover */
+}
+
+.hospital-marker:hover .hospital-name {
+  display: block; /* Prikazuje ime bolnice na hover */
+}
+
+
   
   /* .title {
     font-size: 24px;

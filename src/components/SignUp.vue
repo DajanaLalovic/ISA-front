@@ -191,6 +191,8 @@
         <p v-if="form.country && !isCountryValid" class="error-message">
       Country must contain only letters.
     </p>
+    <p v-if="isAddressValid" class="error-message">{{addressError }}</p>
+
         <p v-if="touchedFields.country && !isCountryValid" class="error-message">
      
     </p>
@@ -212,6 +214,7 @@
 import { ref, computed, onMounted, watch } from 'vue';
 import { useRouter } from 'vue-router';
 import axios from 'axios';
+
 
 export default {
   name: 'SignUp',
@@ -266,6 +269,9 @@ export default {
     const isCityValid = computed(() => /^[a-zA-Z\s]+$/.test(form.value.city));
     const isCountryValid = computed(() => /^[a-zA-Z\s]+$/.test(form.value.country));
     const usernameExists = ref(false);
+    const isAddressValid = ref(false);
+    const addressError = ref("");
+
 
     const checkUsername = async () => {
   if (form.value.username && isUsernameValid.value) {
@@ -305,7 +311,7 @@ watch(() => form.value.username, checkUsername);
         isSurnameValid.value && 
         isCityValid.value &&
         isCountryValid.value &&
-        !usernameExists.value
+        !usernameExists.value 
       );
     });
 
@@ -325,6 +331,20 @@ watch(() => form.value.username, checkUsername);
 
       notification.value = null;
       submitted.value = true;
+
+      /*const isAddressValid = await validateAddress();
+      if (!isAddressValid) {
+        submitted.value = false;
+        alert("adresa nije validna");
+         return; // STOP, ne šalji registraciju dok ne unese validnu adresu
+      }*/
+
+      await validateAddress();
+  if (!isAddressValid.value) {
+    submitted.value = false;
+    alert('Your address is not valid. Please try again with existing one.')
+    return;  // STOP, ne šalji formu
+  }
       try {
         await axios.post('http://localhost:8080/auth/signup', form.value);
         router.push('/login');
@@ -342,6 +362,48 @@ watch(() => form.value.username, checkUsername);
         };*/
       }
     };
+
+   
+
+  /*const validateAddress = async () => {
+  const fullAddress = `${form.value.street} ${form.value.number}, ${form.value.city}, ${form.value.postalCode}, ${form.value.country}`;
+  const url = `https://nominatim.openstreetmap.org/search?format=json&q=${encodeURIComponent(fullAddress)}`;
+
+    try {
+      const response = await axios.get(url);
+      if (response.data && response.data.length > 0) {
+        addressError.value = ""; // validna adresa
+        return true;
+      } else {
+        addressError.value = "Address not found. Please check it again.";
+        return false;
+      }
+    } catch (error) {
+      console.error("Address validation error:", error);
+      addressError.value = "Address validation failed. Try again later.";
+      return false;
+    }
+  };*/
+  const validateAddress = async () => {
+  const fullAddress = `${form.value.street} ${form.value.number}, ${form.value.city}, ${form.value.postalCode}, ${form.value.country}`;
+  const url = `https://nominatim.openstreetmap.org/search?format=json&q=${encodeURIComponent(fullAddress)}`;
+
+  try {
+    const response = await axios.get(url);
+    if (response.data && response.data.length > 0) {
+      addressError.value = ""; // Validna adresa
+      isAddressValid.value = true;
+    } else {
+      addressError.value = "Address not found. Please check it again.";
+      isAddressValid.value = false;
+    }
+  } catch (error) {
+    console.error("Address validation error:", error);
+    addressError.value = "Address validation failed. Try again later.";
+    isAddressValid.value = false;
+  }
+};
+
 
     const goBack = () => {
       router.push('/');
@@ -367,7 +429,10 @@ watch(() => form.value.username, checkUsername);
       isCityValid ,
       isCountryValid ,
       checkUsername,
-      usernameExists
+      usernameExists,
+      addressError,
+      isAddressValid,
+       validateAddress,
     };
   },
  

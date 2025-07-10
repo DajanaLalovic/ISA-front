@@ -68,7 +68,86 @@
     </div>
 
   </div>
-  <div  class="profile-container-right">
+  <div  class="profile-container-right" v-if="currentUserId === profileUserId">
+    <div class="user-connections">
+  <h3>User Connections</h3>
+
+  <div class="lists-container">
+    <!-- Prikaz Followers -->
+    <div class="list-section">
+      <h4>Followers ({{ followers.length }})</h4>
+      <div class="connections-list" v-if="followers.length > 0">
+        <div v-for="follower in followers" :key="follower.id" class="user-card">
+          <img :src="require('@/assets/ikonica.jpeg')" alt="User Avatar" class="user-avatar" />
+          <div class="user-info">
+            <p>{{ follower.name }} {{ follower.surname }}</p>
+           <p>@{{ follower.username }}</p>
+           <p class="email">{{ follower.email }}</p>
+          </div>
+        </div>
+      </div>
+      <div v-else class="no-followers">
+        <img :src="require('@/style/bunny_sad.png')" alt="No Followers" class="no-followers-image" /> 
+  <p class="no-followers-text">You don't have followers yet.Post more so users can find you!</p>
+</div>
+    </div>
+
+    <!-- Prikaz Following -->
+    <div class="list-section">
+      <h4>Following ({{ following.length }})</h4>
+      <div class="connections-list" v-if="following.length > 0">
+        <div v-for="followed in following" :key="followed.id" class="user-card">
+          <img :src="require('@/assets/ikonica.jpeg')" alt="User Avatar" class="user-avatar" />
+          <div class="user-info">
+            <p>{{ followed.name }} {{ followed.surname }}</p>
+           <p>@{{ followed.username }}</p>
+           <p class="email">{{ followed.email }}</p>
+          </div>
+        </div>
+      </div>
+      <div v-else class="no-followers">
+   <img :src="require('@/style/bunny_sad.png')" alt="No Followers" class="no-followers-image" /> 
+  <p class="no-followers-text">You don't follow anyone yet.Go explore and find new friends!</p>
+</div>
+    </div>
+  </div>
+</div>
+
+    <!-- <div class="user-connections">
+  <h3>User Connections</h3>
+  
+  
+  <div v-if="followers.length > 0">
+    <h4>Followers ({{ followers.length }})</h4>
+    <div class="connections-list">
+      <div v-for="follower in followers" :key="follower.id" class="user-card">
+        <img :src="require('@/assets/ikonica.jpeg')" alt="User Avatar" class="user-avatar" />
+        <div class="user-info">
+          <p><strong>Username:</strong> {{ follower.username }}</p>
+          <p><strong>Name:</strong> {{ follower.name }} {{ follower.surname }}</p>
+          <p><strong>Email:</strong> {{ follower.email }}</p>
+        </div>
+      </div>
+    </div>
+  </div>
+
+ 
+  <div v-if="following.length > 0">
+    <h4>Following ({{ following.length }})</h4>
+    <div class="connections-list">
+      <div v-for="followed in following" :key="followed.id" class="user-card">
+        <img :src="require('@/assets/ikonica.jpeg')" alt="User Avatar" class="user-avatar" />
+        <div class="user-info">
+          <p><strong>Username:</strong> {{ followed.username }}</p>
+          <p><strong>Name:</strong> {{ followed.name }} {{ followed.surname }}</p>
+          <p><strong>Email:</strong> {{ followed.email }}</p>
+        </div>
+      </div>
+    </div>
+  </div>
+</div> -->
+
+
   <h3>YOUR POSTS</h3> 
     <div class="posts-list">
    <!-- Prikazivanje naslova MY POSTS -->
@@ -89,11 +168,13 @@
           <span  class="action-icon">👍  {{ post.likesCount }}</span>
            <span @click="viewComments(post.id)" class="action-icon">💬 {{ post.comments?.length || 0 }}</span> 
         </div>
+        
       </div>
 
    
     </div>
   </div>
+
   </div>
 
 </template>
@@ -122,7 +203,9 @@ export default {
     const posts = ref([]); // Dodajemo ovu varijablu za postove
     const myPosts = ref([]);
     const isAuthen = !!localStorage.getItem('authToken'); // Proveravamo da li je korisnik ulogovan
-    
+    const followers = ref([]);
+    const following = ref([]);
+    const profileUserId =  ref(0);
 
     const maskedPassword = computed(() => {
    return user.value && user.value.password
@@ -147,10 +230,14 @@ export default {
           }
         );
         user.value = response.data;
+        profileUserId.value = user.value.id;
 
         // Provera da li trenutni korisnik prati cilj korisnika
         isFollowing.value = user.value.followers?.includes(currentUserId);
         await fetchPosts();
+        if (currentUserId === user.value.id) {
+      await fetchFollowersAndFollowing();
+    }
       } catch (error) {
         console.error("Error loading profile: ", error);
       }
@@ -278,6 +365,7 @@ export default {
 
 
 
+
 const fetchPosts = async () => {
       try {
         const response = await axios.get('http://localhost:8080/api/posts/all');
@@ -287,7 +375,8 @@ const fetchPosts = async () => {
             .map(async post => ({
               ...post,
               imagePath: `http://localhost:8080/images/${post.imagePath}`,
-              likesCount: await fetchLikesCount(post.id)
+              likesCount: await fetchLikesCount(post.id),
+              comments: post.comments || [],
             }))
         );
         
@@ -314,6 +403,55 @@ const formatDate = (dateString) => {
         console.error('Error liking post:', error);
       }
     };
+//     const fetchFollowersAndFollowing = async () => {
+//   try {
+//     const token = localStorage.getItem("authToken");
+
+//     // Fetch followers
+//     const followersResponse = await axios.get(
+//       `http://localhost:8080/api/${userId}/followers`,
+//       { headers: {'Content-Type': 'application/json', Authorization: `Bearer ${token}` } }
+//     );
+//     followers.value = followersResponse.data;
+
+//     // Fetch following
+//     const followingResponse = await axios.get(
+//       `http://localhost:8080/api/${userId}/following`,
+//       { headers: {'Content-Type': 'application/json', Authorization: `Bearer ${token}` } }
+//     );
+//     following.value = followingResponse.data;
+//   } catch (error) {
+//     console.error("Error fetching followers/following: ", error);
+//   }
+// };
+
+const fetchFollowersAndFollowing = async () => {
+  try {
+    const token = localStorage.getItem("authToken");
+
+    // Fetch followers
+    const followersResponse = await axios.get(
+      `http://localhost:8080/api/${userId}/followers`,
+      { headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${token}` } }
+    );
+    followers.value = followersResponse.data;
+    console.log("Fetched followers:", followers.value);
+    //console.log(followers.value.at(0).username);
+
+    // Fetch following
+    const followingResponse = await axios.get(
+      `http://localhost:8080/api/${userId}/following`,
+      { headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${token}` } }
+    );
+    following.value = followingResponse.data;
+    console.log("Fetched following:", following.value);
+
+  } catch (error) {
+    console.error("Error fetching followers/following: ", error);
+  }
+};
+
+
 
 const toggleMenu = (postId) => {
       menuOpen.value[postId] = !menuOpen.value[postId]; // Otvoriti/zatvoriti meni za post
@@ -381,6 +519,8 @@ const toggleMenu = (postId) => {
       fetchUserProfile();
       checkIfFollowing(); //mora da bude za automatski follow ili unfollow
       // fetchPosts();
+      console.log(userId);
+      console.log(currentUserId);
     });
 
     return {
@@ -408,7 +548,10 @@ const toggleMenu = (postId) => {
       fetchLikesCount,
       viewComments,
       formatDate,
-      isAuthen
+      isAuthen,
+      following,
+      followers,
+      profileUserId
     };
   },
 };
@@ -702,4 +845,111 @@ h1 {
 .return-button:hover {
   background-color: #e67e22;
 }
+.user-connections {
+  margin-top: 20px;
+  padding: 15px;
+  display: flex;
+  flex-direction: column;
+  gap: 20px;
+}
+
+.lists-container {
+  display: flex;
+  justify-content: space-between;
+  gap: 20px;
+}
+
+.list-section {
+  flex: 1; /* Svaka lista zauzima jednaku širinu */
+  background-color: #f5e6dc;
+  padding: 15px;
+  border-radius: 10px;
+  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+}
+
+.list-section h4 {
+  color: #e67e22;
+  font-size: 16px;
+  margin-bottom: 10px;
+  text-align: center;
+}
+
+.connections-list {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+  gap: 15px;
+}
+
+.user-card {
+  width: 100%; /* Automatska širina kartice */
+  max-width: 300px; /* Maksimalna širina kartice */
+  padding: 10px;
+  background-color: #fff;
+  border-radius: 8px;
+  box-shadow: 0 2px 5px rgba(0, 0, 0, 0.1);
+  display: flex; /* Flexbox za raspored slike i teksta */
+  align-items: center;
+  gap: 15px; /* Razmak između slike i teksta */
+}
+
+.user-avatar {
+  width: 50px;
+  height: 50px;
+  border-radius: 50%;
+  object-fit: cover;
+}
+
+.user-info {
+  display: flex;
+  flex-direction: column; /* Vertikalno poravnanje teksta */
+  font-size: 14px;
+}
+
+.user-info p {
+  margin: 2px 0; /* Smanjen razmak između linija */
+  color: #333;
+}
+
+.user-info .email {
+  color: #e67e22; /* Narandžasta boja za email */
+  font-weight: bold;
+}
+
+.user-info strong {
+  color: #e67e22;
+}
+
+.no-followers {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  padding: 20px;
+  text-align: center;
+}
+
+.no-followers-image {
+  width: 100px;
+  height: 100px;
+  margin-bottom: 10px;
+}
+
+.comments-section {
+  margin-top: 10px;
+  padding: 10px;
+  background-color: #f9f9f9;
+  border: 1px solid #ddd;
+  border-radius: 5px;
+}
+
+.comment {
+  padding: 5px 0;
+  border-bottom: 1px solid #eee;
+}
+
+.comment:last-child {
+  border-bottom: none;
+}
+
+
 </style>
