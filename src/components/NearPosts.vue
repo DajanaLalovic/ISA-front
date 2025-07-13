@@ -47,7 +47,7 @@
   import axios from "axios";
   import { ref, onMounted } from "vue";
   import { useRouter } from 'vue-router';
-
+  import { imageCache } from './cache.js';
   
   export default {
     name: "NearPosts",
@@ -100,28 +100,58 @@
   }
 };
   
-    const fetchPosts = async () => {
-        try {
-            const token = localStorage.getItem("authToken");
-            const response = await axios.get("http://localhost:8080/api/posts/followed", {
+const fetchPosts = async () => {
+    try {
+        const token = localStorage.getItem("authToken");
+        const response = await axios.get("http://localhost:8080/api/posts/followed", {
             headers: { Authorization: `Bearer ${token}` },
-            });
-            console.log("API response data:", response.data);
-            const processedPosts = await Promise.all(
-            response.data.map(async (post) => ({
-                ...post,
-                comments: post.comments || [],
-                imagePath: `http://localhost:8080/images/${post.imagePath}`,
-                likesCount: await fetchLikesCount(post.id), // Dobavljanje broja lajkova
-            }))
-            );
+        });
+        console.log("API response data:", response.data);
 
-            posts.value = processedPosts.sort((a, b) => new Date(b.createdAt) - new Date(a.createdAt));
-            posts.value.forEach((post) => fetchUser(post.userId));
-        } catch (error) {
-            console.error("Error fetching posts:", error);
-        }
-        };
+        const processedPosts = await Promise.all(
+            response.data.map(async (post) => {
+                const imagePath = `http://localhost:8080/images/${post.imagePath}`;
+                
+                // Dodato keširanje slike
+                await cacheImage(imagePath);
+
+                return {
+                    ...post,
+                    comments: post.comments || [],
+                    imagePath,
+                    likesCount: await fetchLikesCount(post.id), // Dobavljanje broja lajkova
+                };
+            })
+        );
+
+        posts.value = processedPosts.sort((a, b) => new Date(b.createdAt) - new Date(a.createdAt));
+        posts.value.forEach((post) => fetchUser(post.userId));
+    } catch (error) {
+        console.error("Error fetching posts:", error);
+    }
+};
+
+// Funkcija za keširanje slike
+const cacheImage = async (url) => {
+    if (!imageCache[url]) {
+        const img = new Image();
+        img.src = url;
+        await new Promise((resolve, reject) => {
+            img.onload = () => {
+                imageCache[url] = img; // Dodavanje slike u keš
+                console.log(`Slika keširana: ${url}`);
+                resolve();
+            };
+            img.onerror = (error) => {
+                console.error(`Greška pri keširanju slike: ${url}`, error);
+                reject(error);
+            };
+        });
+    } else {
+        console.log(`Slika već postoji u kešu: ${url}`);
+    }
+};
+
 
   
       const fetchUser = async (userId) => {
