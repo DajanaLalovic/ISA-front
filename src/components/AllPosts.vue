@@ -5,7 +5,7 @@
       <div class="post-date">{{ formatDate(post.createdAt) }}</div>
       <div class="post-header">
         <img :src="post.imagePath" alt="Post image" class="post-image" />
-        
+
         <!-- Prikazuje tri tačke samo ako je korisnik ulogovan -->
         <div v-if="isAuthen" class="menu-container">
           <span class="menu-icon" @click="toggleMenu(post.id)">⋮</span>
@@ -20,13 +20,21 @@
       <div class="post-details">
         <div class="post-info">
           <div class="user-info">
-            <h3>{{ users[post.userId] ? `${users[post.userId].name} ${users[post.userId].surname}` : "Unknown User" }}</h3>
+            <h3>{{ users[post.userId] ? `${users[post.userId].name} ${users[post.userId].surname}` : "Unknown User" }}
+            </h3>
             <span @click="goToProfile(post.userId)" class="action-icon">👤</span>
           </div>
           <p>{{ post.description }}</p>
+          <div>
+            <button v-if="isAdmin" @click="approveAd(post.id)" class="approve-button">
+              Approve for Ad
+            </button>
+          </div>
+
+
         </div>
         <div class="post-actions">
-          <span @click="likePost(post.id)" class="action-icon">👍  {{ post.likesCount }}</span>
+          <span @click="likePost(post.id)" class="action-icon">👍 {{ post.likesCount }}</span>
           <span @click="viewComments(post.id)" class="action-icon">💬 {{ post.comments?.length || 0 }}</span>
         </div>
       </div>
@@ -53,6 +61,15 @@ export default {
     const menuOpen = ref({});
     const isAuthen = !!localStorage.getItem('authToken'); // Proveravamo da li je korisnik ulogovan
     const commentsVisible = ref({}); // Track visibility of comments per post
+    //const userRole = localStorage.getItem('userRole'); // npr. "ADMIN"
+    const userId = ref(null);
+    const userRole = ref(null);
+    const isAdmin = ref(false);
+
+    onMounted(() => {
+      fetchPosts();
+      fetchUserRole();
+    });
 
     const fetchPosts = async () => {
       try {
@@ -66,7 +83,7 @@ export default {
               likesCount: await fetchLikesCount(post.id)
             }))
         );
-        
+
         posts.value = processedPosts.sort((a, b) => new Date(b.createdAt) - new Date(a.createdAt));
 
         processedPosts.forEach(post => {
@@ -76,6 +93,29 @@ export default {
         console.error('Error fetching posts:', error);
       }
     };
+
+
+    const fetchUserRole = async () => {
+      const storedUserId = localStorage.getItem('userId');
+      const token = localStorage.getItem('authToken');
+
+      if (storedUserId && token) {
+        userId.value = parseInt(storedUserId);
+        try {
+          const response = await axios.get(`http://localhost:8080/api/user/${userId.value}/role`, {
+            headers: {
+              Authorization: `Bearer ${token}`
+            }
+          });
+          userRole.value = response.data;
+          isAdmin.value = userRole.value === 'ADMIN';
+          console.log('Fetched user role:', userRole.value);
+        } catch (error) {
+          console.error("Error fetching user role:", error);
+        }
+      }
+    };
+
 
     const goBackToHome = () => {
       router.push('/');
@@ -145,7 +185,7 @@ export default {
           if (!post.likes) post.likes = [];
           if (post.likes.includes(userId)) {
             console.log("User has already liked this post.");
-            return; 
+            return;
           }
 
           await axios.put(`http://localhost:8080/api/posts/like/${postId}`, null, {
@@ -154,7 +194,7 @@ export default {
           });
 
           post.likes.push(userId);
-          post.likesCount += 1; 
+          post.likesCount += 1;
         }
       } catch (error) {
         console.error('Error liking post:', error);
@@ -176,7 +216,7 @@ export default {
           latitude: post.latitude,
           longitude: post.longitude,
           imagePath: post.imagePath,
-          createdAt:post.createdAt
+          createdAt: post.createdAt
         },
       });
     };
@@ -203,6 +243,26 @@ export default {
         } else {
           console.error('Error deleting post:', error);
         }
+      }
+    };
+    const approveAd = async (postId) => {
+      try {
+        const token = localStorage.getItem('authToken');
+        if (!token) {
+          alert("You are not authenticated!");
+          return;
+        }
+
+        await axios.post(`http://localhost:8080/api/posts/${postId}/approve-ad`, null, {
+          headers: {
+            'Authorization': `Bearer ${token}`
+          }
+        });
+
+        alert("Post approved for advertisement successfully!");
+      } catch (error) {
+        console.error("Error approving post:", error);
+        alert("Failed to approve post for advertisement.");
       }
     };
 
@@ -232,9 +292,7 @@ export default {
       }
     };
 
-    onMounted(() => {
-      fetchPosts();
-    });
+
 
     return {
       posts,
@@ -243,7 +301,7 @@ export default {
       likePost,
       openUpdateModal,
       toggleMenu,
-      goBackToHome, 
+      goBackToHome,
       deletePost,
       hidePost,
       fetchLikesCount,
@@ -251,9 +309,13 @@ export default {
       goToProfile,
       formatDate,
       isAuthen,
-      commentsVisible
+      commentsVisible,
+      approveAd,
+      isAdmin
     };
-  },
+  }
+
+
 };
 </script>
 
@@ -325,6 +387,7 @@ export default {
   object-fit: cover;
   border-top-left-radius: 10px;
   border-top-right-radius: 10px;
+  padding-top: 10px;
 }
 
 .post-details {
@@ -355,15 +418,17 @@ export default {
   justify-content: flex-end;
   margin-top: 10px;
 }
+
 .user-info {
   display: flex;
   align-items: center;
-  }
-  .user-info h3 {
-    margin: 0;
-    font-size: 18px;
-    color: #333;
-  }
+}
+
+.user-info h3 {
+  margin: 0;
+  font-size: 18px;
+  color: #333;
+}
 
 .action-icon {
   cursor: pointer;
@@ -375,15 +440,15 @@ export default {
 .action-icon:hover {
   color: #007bff;
 }
-.return-button{
+
+.return-button {
   margin-bottom: 20px;
 }
+
 .post-date {
   margin-left: 70%;
-  margin-top: 2%;
-  
+  margin-top: 3%;
   font-size: 14px;
   color: #666;
-  }
+}
 </style>
-
