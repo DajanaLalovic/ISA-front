@@ -42,6 +42,7 @@
 
 
 import axios from 'axios';
+import Swal from 'sweetalert2';
 
 export default {
   name: 'HelloWorld',
@@ -97,8 +98,13 @@ export default {
     },
     logout() {
       // Prikazivanje poruke
-      alert('You are logged out.');
-
+     
+      Swal.fire({
+        icon: 'info',
+        title: 'Logged Out',
+        text: 'You are logged out.',
+        confirmButtonText: 'OK'
+      });
       // Brisanje podataka iz localStorage-a
       localStorage.removeItem('authToken');
       localStorage.removeItem('isLoggedIn');

@@ -1,7 +1,13 @@
 <template>
-  <div class="content">
+
+   
+  <div class="container">
+    <img src="@/style/SIGNUP.png" alt="Bunny Image" class="bunny-image" /> 
+    <div class="sign-up">
+    <h2>{{ title }}</h2>
+   <div class="content">
     <div class="signup-card">
-      <h2>{{ title }}</h2>
+      
       <p v-if="notification" :class="notification.msgType">{{ notification.msgBody }}</p>
       <form @submit.prevent="onSubmit" v-if="!submitted">
        
@@ -103,7 +109,7 @@
         </label>
         <p v-if="touchedFields.email && !isEmailValid" class="error-message">
     Please enter a valid email address.
-  </p>
+    </p>
         <div class="address-fields">
           <label>
             Street:
@@ -152,10 +158,10 @@
             />
             <span v-if="form.city && !isCityValid" class="error-message">
     City must contain only letters.
-  </span>
-  <span v-if="touchedFields.city && !isCityValid" class="error-message">
-    
-  </span>
+    </span>
+    <span v-if="touchedFields.city && !isCityValid" class="error-message">
+      
+    </span>
           </label>
           
           
@@ -200,7 +206,7 @@
         <button :disabled="!isFormValid" type="submit">Sign up</button>
         <button type="button" @click="goBack">Go Back</button>
       </form>
-      <div v-if="submitted" class="loading">Loading...</div>
+   
       <div v-if="errorMessages.length" class="error-summary">
         <ul>
           <li v-for="(msg, index) in errorMessages" :key="index">{{ msg }}</li>
@@ -208,13 +214,20 @@
       </div>
     </div>
   </div>
+  <div v-if="submitted" class="loading-overlay">
+    <div class="spinner"></div>
+    <span class="loading-content">Checking info. Signing you in...</span>
+  </div>
+</div>
+</div>
+
 </template>
 
 <script>
 import { ref, computed, onMounted, watch } from 'vue';
 import { useRouter } from 'vue-router';
 import axios from 'axios';
-
+import Swal from 'sweetalert2';
 
 export default {
   name: 'SignUp',
@@ -329,25 +342,32 @@ watch(() => form.value.username, checkUsername);
       // }
     
 
-      notification.value = null;
-      submitted.value = true;
+     // notification.value = null;
+     // submitted.value = true;
 
-      /*const isAddressValid = await validateAddress();
-      if (!isAddressValid) {
-        submitted.value = false;
-        alert("adresa nije validna");
-         return; // STOP, ne šalji registraciju dok ne unese validnu adresu
-      }*/
+
 
       await validateAddress();
   if (!isAddressValid.value) {
-    submitted.value = false;
-    alert('Your address is not valid. Please try again with existing one.')
+   // submitted.value = false;
+    Swal.fire({
+  icon: 'error',
+  title: 'Invalid address',
+  text: 'Your address is not valid. Please try again with existing one.',
+  confirmButtonText: 'OK'
+});
     return;  // STOP, ne šalji formu
   }
+  submitted.value = true;
       try {
         await axios.post('http://localhost:8080/auth/signup', form.value);
         router.push('/login');
+        Swal.fire({
+          icon: 'success',
+          title: 'Check your mail',
+          text: 'We have sent you a link to activate your account.',
+  confirmButtonText: 'OK'
+});
       } catch (error) {
         submitted.value = false;
 
@@ -439,16 +459,26 @@ watch(() => form.value.username, checkUsername);
 };
 </script>
 
-<style src="@/style/SignUp.css"></style>
+
 <style scoped>
 .content {
+  background-color:white;
   max-width: 400px;
-  margin: 0 auto;
+  display: flex;
+  justify-content: center;
   padding: 20px;
   border: 1px solid #ccc;
   border-radius: 8px;
+  box-shadow: 0 4px 8px rgba(0, 0, 0, 0.2);
 }
-.signup-card h2 {
+
+.signup-card{
+  padding: 20px;
+  display:flex;
+  justify-content:center;
+}
+
+h2 {
   margin-bottom: 20px;
   text-align: center;
 }
@@ -468,6 +498,14 @@ label input {
   gap: 10px;
   margin-bottom: 15px;
 }
+.address-fields label {
+    flex: 1; /* Svaka oznaka (label) će uzeti isti prostor */
+  }
+  
+  .address-fields input {
+    flex: 2; /* Input polja su širih od oznaka */
+    max-width: 160px;
+  }
 button {
   padding: 10px 20px;
   margin-right: 10px;
@@ -484,11 +522,7 @@ button:disabled {
 .input-error {
   border-color: red;
 }
-.loading {
-  text-align: center;
-  font-size: 16px;
-  color: #888;
-}
+
 .error-message {
   color: red;
   font-size: 14px;
@@ -499,5 +533,61 @@ button:disabled {
   color: red;
   font-size: 14px;
   margin-top: 20px;
+} 
+.container{
+  background-color: #f0e7d0;
+  display: flex;
+  justify-content: flex-start;
+  align-items: center;
+  padding-bottom: 10px;
+  border: 1px solid #e0d8b8;
+
+
+  gap:50px;
+}
+.sign-up{
+  display: grid;
+  justify-content: center;
+  align-items: center;
+}
+
+.bunny-image {
+  width: 400px; /* Širina slike */
+  height: 550px;
+}
+
+.loading-overlay {
+  position: fixed;
+  top: 0; left: 0;
+  width: 100vw;
+  height: 100vh;
+  background-color: rgba(255, 255, 255); /* tamni poluprovidni overlay */
+  display: flex;
+  flex-direction: column;
+  gap:50px;
+  justify-content: center;
+  align-items: center;
+  z-index: 9999; /* da bude iznad svega */
+}
+
+.loading-content {
+  color: rgb(0, 0, 0);
+  font-size: 24px;
+  font-weight: bold;
+  /* možeš dodati i animaciju spinnera ili slično */
+}
+.spinner {
+  border: 8px solid #f3f3f3; /* svetlo siva pozadina */
+  border-top: 8px solid #ff6600; /* narandžasti vrh (možeš promeniti boju) */
+  border-radius: 50%;
+  width: 60px;
+  height: 60px;
+  animation: spin 1s linear infinite;
+}
+
+/* animacija rotacije */
+@keyframes spin {
+  0% { transform: rotate(0deg); }
+  100% { transform: rotate(360deg); }
 }
 </style>

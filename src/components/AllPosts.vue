@@ -43,6 +43,7 @@
 import axios from 'axios';
 import { ref, onMounted } from 'vue';
 import { useRouter } from 'vue-router';
+import Swal from 'sweetalert2';
 
 export default {
   name: 'AllPosts',
@@ -109,7 +110,12 @@ export default {
     const viewComments = (postId) => {
       const authToken = localStorage.getItem('authToken');
       if (!authToken) {
-        alert("You cannot leave comments, you are not logged in!");
+        Swal.fire({
+        icon: 'warning',
+        title: 'Not logged in',
+        text: 'You cannot leave comments, you are not logged in!',
+        confirmButtonText: 'OK'
+      });
         return;
       }
       commentsVisible.value[postId] = !commentsVisible.value[postId];
@@ -132,7 +138,12 @@ export default {
     const likePost = async (postId) => {
       const token = localStorage.getItem('authToken');
       if (!token) {
-        alert("You cannot like post, you are not logged in!");
+        Swal.fire({
+        icon: 'warning',
+        title: 'Not logged in',
+        text: 'You cannot like post, you are not logged in!',
+        confirmButtonText: 'OK'
+      });
         return;
       }
 

@@ -18,7 +18,207 @@
       <!-- <div id="map" class="map"></div> -->
     </div>
   </template>
+  <script>
+  import { Map, View } from "ol";
+  import TileLayer from "ol/layer/Tile";
+  import OSM from "ol/source/OSM";
+  import Overlay from "ol/Overlay";
+  import { fromLonLat } from "ol/proj";
+  import { defaults as defaultControls } from "ol/control";
+  import axios from "axios";
+  import { useRoute } from 'vue-router';
   
+  export default {
+    name: "UserMap",
+    data() {
+      return {
+        map: null,
+        userAddress: "",
+        posts: [],
+        userCoordinates: { latitude: 0, longitude: 0 },
+        addressCache: {}, // ✅ dodato keširanje koordinata po adresi
+      };
+    },
+    methods: {
+      async fetchLocations() {
+        try {
+          const token = localStorage.getItem('authToken');
+          const response = await axios.get('http://localhost:8080/api/locationMessage/all', {
+            headers: {
+              'Content-Type': 'application/json',
+              'Authorization': `Bearer ${token}`,
+            },
+          });
+  
+          const locations = response.data;
+  
+          for (const location of locations) {
+            const address = `${location.street} ${location.number}, ${location.city}, ${location.postalCode}, ${location.country}`;
+            const coordinates = await this.getCoordinatesFromAddress(address);
+            this.addHospitalMarker(coordinates.latitude, coordinates.longitude, location.name);
+          }
+        } catch (error) {
+          console.error('Error fetching locations:', error);
+        }
+      },
+  
+      addHospitalMarker(lat, lon, name) {
+        const markerElement = document.createElement("div");
+        markerElement.className = "hospital-marker";
+        markerElement.innerHTML = `
+          <span class="hospital-icon">🏥</span>
+          <div class="hospital-name">🐾${name}🐇</div>
+        `;
+        markerElement.style.cursor = "pointer";
+  
+        const marker = new Overlay({
+          position: fromLonLat([lon, lat]),
+          positioning: "center-center",
+          element: markerElement,
+          stopEvent: false,
+        });
+  
+        this.map.addOverlay(marker);
+      },
+  
+      async fetchUserProfile(userId) {
+        try {
+          const response = await axios.get(`http://localhost:8080/api/profile/${userId}`);
+          const address = response.data.address;
+          this.userAddress = `${address.street} ${address.number}, ${address.city}, ${address.postalCode}, ${address.country}`;
+          await this.setUserCoordinates();
+        } catch (error) {
+          console.error("Error loading user profile: ", error);
+        }
+      },
+  
+      async getCoordinatesFromAddress(address) {
+        if (this.addressCache[address]) {
+          return this.addressCache[address]; // ✅ koristi keš ako postoji
+        }
+  
+        const url = `https://nominatim.openstreetmap.org/search?format=json&q=${encodeURIComponent(address)}`;
+        try {
+          const response = await axios.get(url);
+          if (response.data && response.data.length > 0) {
+            const { lat, lon } = response.data[0];
+            const coords = { latitude: parseFloat(lat), longitude: parseFloat(lon) };
+            this.addressCache[address] = coords; // ✅ sačuvaj u keš
+            return coords;
+          }
+        } catch (error) {
+          console.error("Error fetching coordinates: ", error);
+        }
+        return { latitude: 45.2671, longitude: 19.8335 }; // Default (Novi Sad)
+      },
+  
+      async setUserCoordinates() {
+        const { latitude, longitude } = await this.getCoordinatesFromAddress(this.userAddress);
+        this.userCoordinates = { latitude, longitude };
+        await this.initializeMap();
+      },
+  
+      async fetchPosts(userId) {
+        try {
+          const response = await axios.get('http://localhost:8080/api/posts/all');
+          const userIdNumber = Number(userId);
+          const processedPosts = await Promise.all(
+            response.data
+              .filter(post => !post.isRemoved && post.userId !== userIdNumber)
+              .map(async post => ({
+                ...post,
+                imagePath: `http://localhost:8080/images/${post.imagePath}`,
+              }))
+          );
+          this.posts = processedPosts.sort((a, b) => new Date(b.createdAt) - new Date(a.createdAt));
+          this.addPostMarkers();
+        } catch (error) {
+          console.error('Error fetching posts:', error);
+        }
+      },
+  
+      async initializeMap() {
+        if (!this.userCoordinates.latitude || !this.userCoordinates.longitude) {
+          console.error("User coordinates are invalid. Map not initialized.");
+          return;
+        }
+  
+        this.map = new Map({
+          target: "map",
+          layers: [
+            new TileLayer({
+              source: new OSM(),
+            }),
+          ],
+          view: new View({
+            center: fromLonLat([
+              this.userCoordinates.longitude,
+              this.userCoordinates.latitude,
+            ]),
+            zoom: 12,
+          }),
+          controls: defaultControls({
+            attribution: false,
+          }),
+        });
+  
+        this.addUserMarker();
+      },
+  
+      addUserMarker() {
+        const markerElement = document.createElement("div");
+        markerElement.className = "user-marker";
+        markerElement.title = "Your Location";
+        markerElement.innerHTML = `
+          📍🏡
+          <img src="https://plus.unsplash.com/premium_vector-1721890983105-625c0d32045f?fm=jpg&q=60&w=3000&ixlib=rb-4.0.3" alt="Your Location">
+        `;
+        markerElement.style.cursor = "pointer";
+  
+        const marker = new Overlay({
+          position: fromLonLat([
+            this.userCoordinates.longitude,
+            this.userCoordinates.latitude,
+          ]),
+          positioning: "center-center",
+          element: markerElement,
+          stopEvent: false,
+        });
+  
+        this.map.addOverlay(marker);
+      },
+  
+      addPostMarkers() {
+        this.posts.forEach((post) => {
+          const markerElement = document.createElement("div");
+          markerElement.className = "marker";
+          markerElement.title = post.description;
+          markerElement.innerHTML = `📍<img src="${post.imagePath}">`;
+          markerElement.style.cursor = "pointer";
+  
+          const marker = new Overlay({
+            position: fromLonLat([post.longitude, post.latitude]),
+            positioning: "center-center",
+            element: markerElement,
+            stopEvent: false,
+          });
+  
+          this.map.addOverlay(marker);
+        });
+      },
+    },
+  
+    async mounted() {
+      const route = useRoute();
+      const userId = route.params.userId;
+      await this.fetchUserProfile(userId);
+      await this.fetchPosts(userId);
+      await this.fetchLocations();
+    },
+  };
+  </script>
+  
+<!--   
   <script>
   import { Map, View } from "ol";
   import TileLayer from "ol/layer/Tile";
@@ -295,7 +495,7 @@
       await this.fetchLocations();
     },
   };
-  </script>
+  </script> -->
   
   <style >
   .map-container {

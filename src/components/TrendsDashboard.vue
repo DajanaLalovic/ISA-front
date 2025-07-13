@@ -1,15 +1,32 @@
 <template>
   <div class="trends-container">
-    <button @click="goBackToHome" class="return-button">Return</button>
 
+    <button @click="goBackToHome" class="return-button">Return</button>
+  <div class="center-container">
+  <p class="title">Trendings</p>
+</div>
+
+  
+   
+  
     <div class="statistic">
-      <h2>Total number of posts: {{ totalPosts }}</h2>
-      <h2>Posts in the last 30 days: {{ postsLast30Days }}</h2>
-    </div>
+      
+        <div class="stat-item">
+          <div class="stat-label">Total number of posts</div>
+          <div class="stat-value">{{ totalPosts }}</div>
+        </div>
+      <div class="stat-item">
+        <div class="stat-label">Posts in the last 30 days</div>
+        <div class="stat-value">{{ postsLast30Days }}</div>
+      </div>
+</div>
+
 
     <div class="posts-section">
       <div class="popular-posts1">
-        <h2>Top 5 most liked posts in the last 7 days:</h2>
+        <div class="title-item">
+        <h2 class="title-label">Top 5 most liked posts in the last 7 days:</h2>
+        </div>
         <div v-for="(post, index) in top5Last7Days" :key="post.id" class="post-card2">
           <div class="post-number">🏆{{ index + 1 }}</div>
           <div class="post-date">{{ formatDate(post.createdAt) }}</div>
@@ -29,7 +46,9 @@
       </div>
 
       <div class="popular-posts2">
-        <h2>Top 10 most liked posts of all time:</h2>
+        <div class="title-item">
+        <h2 class="title-label">Top 10 most liked posts of all time:</h2>
+        </div>
         <div class="posts-list1">
           <div v-for="(post, index) in top10AllTime" :key="post.id" class="post-card1">
             <div class="post-number">🏆{{ index + 1 }}</div>
@@ -71,7 +90,8 @@
   import axios from "axios";
   import { ref, onMounted } from "vue";
   import { useRouter } from "vue-router";
-  
+  import Swal from 'sweetalert2';
+
   export default {
     name: "TrendsList",
     setup() {
@@ -82,29 +102,21 @@
       const top10AllTime = ref([]);
       const topUsers = ref([]);
   
-    //   const fetchTrends = async () => {
-    //     try {
-    //       // API endpoint for trends data
-    //       const response = await axios.get('http://localhost:8080/api/trends'); 
-  
-    //       totalPosts.value = response.data.totalPosts;
-    //       postsLast30Days.value = response.data.postsLast30Days;
-    //       top5Last7Days.value = response.data.top5Last7Days;
-    //       top10AllTime.value = response.data.top10AllTime;
-    //     } catch (error) {
-    //       console.error('Error fetching trends data:', error);
-    //     }
-    //   };
+
     const fetchTrends = async () => {
   try {
-    // Dohvati token iz Local Storage
+ 
     const token = localStorage.getItem('authToken');
     if (!token) {
-      alert('Nedostaje token za autentifikaciju. Prijavi se ponovo.');
+      Swal.fire({
+  icon: 'error',
+  title: 'Missing authentication token',
+  text: 'Please log in again.',
+  confirmButtonText: 'OK'
+});
       return;
     }
 
-    // API endpoint for trends data
     const response = await axios.get('http://localhost:8080/api/trends', {
       headers: {
         'Content-Type': 'application/json', 
@@ -136,16 +148,6 @@
     top10AllTime.value= processedTop10;
 
 
-    ////
-
-    // const userIds = await axios.get('http://localhost:8080/api/top-users');
-    //     const users = await Promise.all(
-    //       userIds.data.map(async userId => {
-    //         const userResponse = await axios.get(`http://localhost:8080/api/getOneUser/${userId}`);
-    //         return userResponse.data;
-    //       })
-    //     );
-    //     topUsers.value = users;
     const userIds = await axios.get('http://localhost:8080/api/top-users', {
   headers: {
     'Content-Type': 'application/json',
@@ -159,8 +161,6 @@ const users = await Promise.all(
   })
 );
 topUsers.value = users;
-
-    ///
 
     
   } catch (error) {
@@ -207,86 +207,6 @@ topUsers.value = users;
   };
   </script>
   
-  <!-- <style scoped>
-  .trends-container {
-    background-size: cover;
-    padding: 20px;
-    min-height: 100vh;
-  }
-  
-  .statistic {
-    margin-bottom: 20px;
-  }
-  
-  .popular-posts1 {
-    margin-top: 20px;
-    width: 50%; /* Zauzima 50% širine ekrana */
-    float: left; /* Pozicionira element skroz levo */
-    margin-left: 0; /* Osigurava da nema dodatnog margina s leve strane */
-    margin-right: 0; /* Neutralisanje desnog margina ako postoji */
-}
-.popular-posts2 {
-    margin-top: 20px;
-    width: 50%; /* Zauzima 50% širine ekrana */
-    float: right; /* Pozicionira element skroz levo */
-    margin-left: 0; /* Osigurava da nema dodatnog margina s leve strane */
-    margin-right: 0; /* Neutralisanje desnog margina ako postoji */
-}
-  
- 
-.post-card {
-  flex: 1 1 calc(70%); /* Kartica zauzima četvrtinu reda minus razmak */
-  max-width: calc(70%); /* Osigurava da kartica ne pređe ovu širinu */
-  border: 1px solid #ccc;
-  border-radius: 10px;
-  background-color: #fff;
-  box-shadow: 0 4px 8px rgba(0, 0, 0, 0.2);
-}
-.post-card1 {
-  flex: 1 1 calc(40%); /* Kartica zauzima četvrtinu reda minus razmak */
-  max-width: calc(40%); /* Osigurava da kartica ne pređe ovu širinu */
-  border: 1px solid #ccc;
-  border-radius: 10px;
-  background-color: #fff;
-  box-shadow: 0 4px 8px rgba(0, 0, 0, 0.2);
-}
-.posts-list {
-  display: flex;
-  flex-wrap: wrap; /* Kartice prelaze u sledeći red kada nema dovoljno mesta */
-  gap: 2px; /* Razmak između kartica */
-}
-  
-.post-date {
-  margin-left: 70%;
-  margin-top: 2%;
-  
-  font-size: 14px;
-  color: #666;
-  }
-  .return-button {
-    margin-bottom: 20px;
-    padding: 10px;
-    background-color: #007bff;
-    color: white;
-    border: none;
-    cursor: pointer;
-  }
-  .post-number{
-    font-size: large;
-  }
-
-  .return-button:hover {
-    background-color: #0056b3;
-  }
-  .post-image {
-  width: 100%;
-  height: 250px;
-  object-fit: cover;
-  border-top-left-radius: 10px;
-  border-top-right-radius: 10px;
-}
-  </style>
-   -->
    
 <style scoped>
 .trends-container {
@@ -298,7 +218,56 @@ topUsers.value = users;
   font-family: 'Roboto', sans-serif;
   background-size: cover;
   min-height: 100%;
+  align-self: center;
 }
+
+.statistic h2 {
+  font-size: 22px;           /* povećaj font */
+  font-weight: 700;          /* podebljaj */
+  color: #f07726;            /* toplija boja za akcenat */
+  margin-bottom: 10px;       /* malo prostora između linija */
+  text-shadow: 1px 1px 2px rgba(0,0,0,0.1); /* blaga senka za dubinu */
+}
+.statistic {
+  display: flex;
+  gap: 40px; /* razmak između stavki */
+  justify-content: center;
+  margin-bottom: 30px;
+}
+
+.stat-item {
+  background: linear-gradient(135deg, #f6d365 0%, #fda085 100%);
+  padding: 20px 30px;
+  border-radius: 15px;
+  box-shadow: 0 8px 15px rgba(246, 211, 101, 0.4);
+  text-align: center;
+  min-width: 180px;
+  color: white;
+  font-family: 'Roboto', sans-serif;
+  cursor: default;
+  transition: transform 0.3s ease;
+}
+
+.stat-item:hover {
+  transform: translateY(-5px);
+  box-shadow: 0 12px 20px rgba(246, 211, 101, 0.7);
+}
+
+.stat-label {
+  font-size: 16px;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 1.2px;
+  margin-bottom: 8px;
+  opacity: 0.9;
+}
+
+.stat-value {
+  font-size: 36px;
+  font-weight: 800;
+  text-shadow: 1px 1px 4px rgba(0,0,0,0.15);
+}
+
 
 .return-button {
   background-color: #ff9f43;
@@ -419,4 +388,52 @@ topUsers.value = users;
   color: #555;
   margin: 5px 0;
 }
+
+.title-item {
+  text-align: center;
+  font-family: 'Roboto', sans-serif;
+}
+
+.title-label {
+  font-size: 16px;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 1.2px;
+  margin-bottom: 8px;
+  opacity: 0.9;
+  color:  #f07726;
+  padding: 20px;
+}
+
+.center-container {
+  margin-left:380px;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+}
+
+.title {
+  font-size: 32px;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 1.5px;
+  color: #555;
+  text-align: center;
+}
+
+
+.title-value {
+  font-size: 40px;
+  font-weight: 900;
+  background: linear-gradient(135deg, #f6d365 0%, #fda085 100%);
+
+  -webkit-text-fill-color: transparent;
+  text-shadow: 1px 1px 4px rgba(0,0,0,0.1);
+  transition: transform 0.3s ease;
+}
+
+.title-value:hover {
+  transform: scale(1.1);
+}
+
 </style>

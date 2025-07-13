@@ -184,6 +184,7 @@ import axios from "axios";
 import { ref, computed,onMounted } from "vue";
 import { useRoute } from "vue-router";
 import { useRouter } from 'vue-router';
+import Swal from 'sweetalert2';
 
 export default {
   name: "ProfileView",
@@ -248,7 +249,12 @@ export default {
       const token = localStorage.getItem("authToken");
 
       if (!token || !currentUserId) {
-        alert("You are not logged in!");
+        Swal.fire({
+        icon: 'warning',
+        title: 'Not logged in',
+        text: 'You are not logged in!',
+        confirmButtonText: 'OK'
+      });
         return;
       }
 
@@ -261,14 +267,24 @@ export default {
           }
         );
         // isFollowing.value = true; // Ažuriraj stanje nakon Follow
-        alert("You are now following this user.");
+        Swal.fire({
+        icon: 'success',
+        title: 'Followed',
+        text: 'You are now following this user.',
+        confirmButtonText: 'OK'
+      });
         
         await fetchUserProfile(); // Osveži podatke o korisniku
         isFollowing.value = true; // Ažuriraj stanje nakon Follow
       } catch (error) {
         console.error("Error following user:", error);
         if (error.response && error.response.status === 429) {
-          alert("You have exceeded the follow limit. Please wait a minute.");
+          Swal.fire({
+      icon: 'error',
+      title: 'Follow limit exceeded',
+      text: 'You have exceeded the follow limit. Please wait a minute.',
+      confirmButtonText: 'OK'
+    });
         } else {
           alert("Failed to follow user.");
         }
@@ -310,7 +326,14 @@ export default {
           headers: { Authorization: `Bearer ${token}` },
         });
         isFollowing.value = false; // Ažuriraj stanje nakon Unfollow
-        alert("You have unfollowed this user.");
+        
+        Swal.fire({
+          icon: 'info',
+          title: 'Unfollowed',
+          text: 'You have unfollowed this user.',
+          confirmButtonText: 'OK'
+        });
+
         await fetchUserProfile(); // Osveži podatke o korisniku
       } catch (error) {
         console.error("Error unfollowing user:", error);
@@ -349,15 +372,30 @@ export default {
         },
       }
     );
-    alert('Password updated successfully!');
+        Swal.fire({
+      icon: 'success',
+      title: 'Password Updated',
+      text: 'Password updated successfully!',
+      confirmButtonText: 'OK'
+    });
     isChangingPassword.value = false;
   } catch (error) {
     console.error('Error updating password:', error.response?.status, error.response?.data);
     if (error.response && error.response.status === 401) {
-      alert('Autentifikacija nije uspela. Prijavi se ponovo.');
+      Swal.fire({
+      icon: 'error',
+      title: 'Authentication Failed',
+      text: 'Authentication failed. Please log in again.',
+      confirmButtonText: 'OK'
+    });
       
     } else {
-      alert('Failed to update password.');
+      Swal.fire({
+      icon: 'error',
+      title: 'Password Update Failed',
+      text: 'Failed to update password.',
+      confirmButtonText: 'OK'
+    });
     }
   }
 };
