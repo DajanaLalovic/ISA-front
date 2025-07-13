@@ -4,8 +4,9 @@
     <div v-for="post in posts" :key="post.id" class="post-card">
       <div class="post-date">{{ formatDate(post.createdAt) }}</div>
       <div class="post-header">
-        <img :src="post.imagePath" alt="Post image" class="post-image" />
-        
+        <!-- <img :src="post.imagePath" alt="Post image" class="post-image" /> -->
+        <img :src="imageCache[post.imagePath] ? imageCache[post.imagePath].src : post.imagePath"
+          alt="Post image" class="post-image"/>
         <!-- Prikazuje tri tačke samo ako je korisnik ulogovan -->
         <div v-if="isAuthen" class="menu-container">
           <span class="menu-icon" @click="toggleMenu(post.id)">⋮</span>
@@ -43,6 +44,9 @@
 import axios from 'axios';
 import { ref, onMounted } from 'vue';
 import { useRouter } from 'vue-router';
+import { imageCache } from './cache.js';
+
+import Swal from 'sweetalert2';
 
 export default {
   name: 'AllPosts',
@@ -53,6 +57,7 @@ export default {
     const menuOpen = ref({});
     const isAuthen = !!localStorage.getItem('authToken'); // Proveravamo da li je korisnik ulogovan
     const commentsVisible = ref({}); // Track visibility of comments per post
+    // const imageCache=ref([]);
 
     const fetchPosts = async () => {
       try {
@@ -60,11 +65,15 @@ export default {
         const processedPosts = await Promise.all(
           response.data
             .filter(post => !post.isRemoved)
-            .map(async post => ({
+            .map(async post => {
+            const imagePath = `http://localhost:8080/images/${post.imagePath}`;
+            await cacheImage(imagePath); // kesiranje slike
+            return {
               ...post,
-              imagePath: `http://localhost:8080/images/${post.imagePath}`,
-              likesCount: await fetchLikesCount(post.id)
-            }))
+              imagePath,
+              likesCount: await fetchLikesCount(post.id),
+            };
+          })
         );
         
         posts.value = processedPosts.sort((a, b) => new Date(b.createdAt) - new Date(a.createdAt));
@@ -76,6 +85,26 @@ export default {
         console.error('Error fetching posts:', error);
       }
     };
+
+    const cacheImage = async (url) => {
+    if (!imageCache[url]) {
+      const img = new Image();
+      img.src = url;
+      await new Promise((resolve, reject) => {
+        img.onload = () => {
+          imageCache[url] = img;
+          console.log(`Slika kesirana: ${url}`);
+          resolve();
+        };
+        img.onerror = (error) => {
+          console.error(`Greska pri kesiranju slike: ${url}`, error);
+          reject(error);
+        };
+      });
+    } else {
+      console.log(`Slika vec postoji u kesu: ${url}`);
+    }
+  };
 
     const goBackToHome = () => {
       router.push('/');
@@ -109,7 +138,12 @@ export default {
     const viewComments = (postId) => {
       const authToken = localStorage.getItem('authToken');
       if (!authToken) {
-        alert("You cannot leave comments, you are not logged in!");
+        Swal.fire({
+        icon: 'warning',
+        title: 'Not logged in',
+        text: 'You cannot leave comments, you are not logged in!',
+        confirmButtonText: 'OK'
+      });
         return;
       }
       commentsVisible.value[postId] = !commentsVisible.value[postId];
@@ -132,7 +166,12 @@ export default {
     const likePost = async (postId) => {
       const token = localStorage.getItem('authToken');
       if (!token) {
-        alert("You cannot like post, you are not logged in!");
+        Swal.fire({
+        icon: 'warning',
+        title: 'Not logged in',
+        text: 'You cannot like post, you are not logged in!',
+        confirmButtonText: 'OK'
+      });
         return;
       }
 
@@ -251,7 +290,8 @@ export default {
       goToProfile,
       formatDate,
       isAuthen,
-      commentsVisible
+      commentsVisible,
+      imageCache
     };
   },
 };

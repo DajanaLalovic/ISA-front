@@ -11,6 +11,8 @@ import UsersChat from '@/components/UsersChat.vue';
 import NearPosts from '@/components/NearPosts.vue';
 import FollowedPosts from '@/components/FollowedPosts.vue';
 import AllUsers from '@/components/AllUsers.vue';
+import TrendsDashboard from '@/components/TrendsDashboard.vue';
+import UserMap from '@/components/UserMap.vue';
 
 const routes = [
   { path: '/', name: 'HelloWorld', component: HelloWorld },
@@ -20,11 +22,13 @@ const routes = [
   {path: '/posts', name: 'AddPost', component: AddPost,  meta: { requiresAuth: true } },
   {path: '/profile/:userId', name: 'ProfileView',component: Profile},
   { path: '/allPosts', name: 'AllPosts', component: AllPosts },
-  { path: '/analitics', name: 'UsersAnalitics', component: UsersAnalitics,  meta: { requiresAuth: true }},
+  { path: '/analytics', name: 'UsersAnalitics', component: UsersAnalitics,  meta: { requiresAuth: true }},
   {path: '/chat', name: 'UsersChat', component: UsersChat,  meta: { requiresAuth: true }},
   {path:'/nearPosts', name: 'NearPosts', component: NearPosts,  meta: { requiresAuth: true }},
   {path: '/followedPosts', name:'FollowedPosts', component:FollowedPosts,  meta: { requiresAuth: true }},
-  {path: '/allUsers', name:'AllUsers', component:AllUsers}
+  {path: '/allUsers', name:'AllUsers', component:AllUsers},
+  {path: '/trends', name:'TrendsDashboard', component:TrendsDashboard},
+  {path: '/userMap/:userId', name:'UserMap', component:UserMap}
 ];
 
 const router = createRouter({
