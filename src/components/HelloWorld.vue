@@ -6,6 +6,7 @@
       <div class="nav-links">
         <router-link to="/signup" class="nav-link" v-if="!isLoggedIn">Sign up</router-link>
         <router-link to="/login" class="nav-link" v-if="!isLoggedIn">Log in</router-link>
+        <router-link :to="`/usermap/${userId}`" class="nav-link" v-if="isLoggedIn">Map</router-link>
         <router-link to="/posts" class="nav-link" v-if="isLoggedIn">AddPost</router-link>
         <router-link to="/allPosts" class="nav-link">Posts</router-link>
         <router-link to="/allUsers" class="nav-link" v-if="isAdmin">Users</router-link>
@@ -26,10 +27,13 @@
       </div>
     </section>
     <div class="links-container">
-      <router-link to="/analitics" class="link" v-if="isLoggedIn">User Analytics</router-link>
-      <router-link to="/chat" class="link" v-if="isLoggedIn">User Chat</router-link>
-      <router-link to="/nearPosts" class="link" v-if="isLoggedIn">Posts from followers</router-link>
-      <router-link to="/followedPosts" class="link" v-if="isLoggedIn">Followed Posts</router-link>
+      <router-link to="/trends" class="link"  v-if="isLoggedIn">Trends Dashboard</router-link>
+      <router-link to="/analytics" class="link"  v-if="isAdmin">Application Analytics</router-link>
+      <router-link to="/chat" class="link" v-if="isUser">User Chat</router-link> <!--samo user    v-if="isLoggedIn"-->
+      <router-link to="/nearPosts" class="link" v-if="isUser">Posts from followers</router-link><!--samo user    v-if="isLoggedIn"-->
+      <router-link to="/followedPosts" class="link" v-if="isUser">Followed Posts</router-link><!--samo user   v-if="isLoggedIn"-->
+
+
     </div>
   
   </div>
@@ -39,6 +43,7 @@
 
 
 import axios from 'axios';
+import Swal from 'sweetalert2';
 
 export default {
   name: 'HelloWorld',
@@ -57,6 +62,9 @@ export default {
   computed: {
     isAdmin() {
       return this.userRole === 'ADMIN';
+    },
+    isUser() {
+      return this.userRole === 'USER';
     },
   },
   mounted() {
@@ -94,8 +102,13 @@ export default {
     },
     logout() {
       // Prikazivanje poruke
-      alert('You are logged out.');
-
+     
+      Swal.fire({
+        icon: 'info',
+        title: 'Logged Out',
+        text: 'You are logged out.',
+        confirmButtonText: 'OK'
+      });
       // Brisanje podataka iz localStorage-a
       localStorage.removeItem('authToken');
       localStorage.removeItem('isLoggedIn');
