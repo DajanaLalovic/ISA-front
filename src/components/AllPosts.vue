@@ -42,8 +42,18 @@
 
       <!-- Display comments section if commentsVisible is true for this post -->
       <div v-if="commentsVisible[post.id]" class="comments-section">
-        <p v-if="!post.comments || post.comments.length === 0">There are no comments.</p>
+        <p v-if="!postComments[post.id] || postComments[post.id].length === 0">There are no comments.</p>
+        <div v-else>
+          <div v-for="comment in postComments[post.id]" :key="comment.id" class="comment-item">
+            <p>
+              <strong>{{ comment.username || 'User' }}</strong>: {{ comment.text }}
+              <span style="font-size: 12px; color: #888;">({{ formatDate(comment.createdAt) }})</span>
+            </p>
+          </div>
+        </div>
+
       </div>
+
     </div>
   </div>
 </template>
@@ -69,6 +79,7 @@ export default {
     const userId = ref(null);
     const userRole = ref(null);
     const isAdmin = ref(false);
+    const postComments = ref({});
 
     onMounted(() => {
       fetchPosts();
@@ -171,11 +182,31 @@ export default {
       }
     };
 
+    const fetchCommentsForPost = async (postId) => {
+      try {
+        const token = localStorage.getItem('authToken');
+
+        const response = await axios.get(`http://localhost:8080/api/comments/${postId}/comments`, {
+
+          headers: {
+            Authorization: `Bearer ${token}`
+          }
+        });
+
+        return response.data;
+      } catch (error) {
+        console.error(`Error fetching comments for post ${postId}:`, error);
+        return [];
+      }
+    };
+
+
+
     const toggleMenu = (postId) => {
       menuOpen.value[postId] = !menuOpen.value[postId];
     };
 
-    const viewComments = (postId) => {
+    const viewComments = async (postId) => {
       const authToken = localStorage.getItem('authToken');
       if (!authToken) {
         Swal.fire({
@@ -186,9 +217,11 @@ export default {
         });
         return;
       }
+      if (!postComments.value[postId]) {
+        postComments.value[postId] = await fetchCommentsForPost(postId);
+      }
       commentsVisible.value[postId] = !commentsVisible.value[postId];
     };
-
     const goToProfile = (userId) => {
       router.push(`/profile/${userId}`);
     };
@@ -351,7 +384,8 @@ export default {
       commentsVisible,
       imageCache,
       approveAd,
-      isAdmin
+      isAdmin,
+      postComments
     };
   }
 
@@ -483,6 +517,10 @@ export default {
 
 .return-button {
   margin-bottom: 20px;
+  background-color: #007bff;
+  border-radius: 8px;
+  border-color: #007bff;
+  color: #f0f0f0;
 }
 
 .post-date {
@@ -490,5 +528,12 @@ export default {
   margin-top: 3%;
   font-size: 14px;
   color: #666;
+}
+
+.comment-item {
+  background-color: #fff8e1;
+  border-radius: 8px;
+  padding: 8px 12px;
+  margin-bottom: 8px;
 }
 </style>
