@@ -1,10 +1,10 @@
 <template>
 
-   
+   <h2>{{ title }}</h2>
   <div class="container">
     <img src="@/style/SIGNUP.png" alt="Bunny Image" class="bunny-image" /> 
     <div class="sign-up">
-    <h2>{{ title }}</h2>
+    
    <div class="content">
     <div class="signup-card">
       
@@ -470,6 +470,10 @@ watch(() => form.value.username, checkUsername);
   border: 1px solid #ccc;
   border-radius: 8px;
   box-shadow: 0 4px 8px rgba(0, 0, 0, 0.2);
+  margin-left: 530px; /* pomeri formu desno da ne ide preko zeke */
+  position: relative;
+  z-index: 2;
+  margin-top: 10px;
 }
 
 .signup-card{
@@ -499,22 +503,30 @@ label input {
   margin-bottom: 15px;
 }
 .address-fields label {
-    flex: 1; /* Svaka oznaka (label) će uzeti isti prostor */
+    flex: 1; 
   }
   
   .address-fields input {
-    flex: 2; /* Input polja su širih od oznaka */
+    flex: 2;
     max-width: 160px;
   }
 button {
   padding: 10px 20px;
   margin-right: 10px;
-  cursor: pointer;
-  background-color: #007bff;
+  background-color: #ff9f43;
   color: #fff;
   border: none;
-  border-radius: 4px;
+  padding: 10px 20px;
+  border-radius: 20px;
+  font-size: 14px;
+  font-weight: bold;
+  cursor: pointer;
+  transition: background-color 0.3s ease;
 }
+button:hover{
+    background-color: #f19c4d;
+  }
+  
 button:disabled {
   background-color: #ccc;
   cursor: not-allowed;
@@ -535,6 +547,7 @@ button:disabled {
   margin-top: 20px;
 } 
 .container{
+  position: relative;
   background-color: #f0e7d0;
   display: flex;
   justify-content: flex-start;
@@ -552,8 +565,12 @@ button:disabled {
 }
 
 .bunny-image {
-  width: 400px; /* Širina slike */
+  position: absolute;
+  top: 100px;
+  left: 40px;
+  width: 400px;
   height: 550px;
+  z-index: 1;
 }
 
 .loading-overlay {

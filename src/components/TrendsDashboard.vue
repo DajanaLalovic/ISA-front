@@ -27,7 +27,7 @@
         <div class="title-item">
         <h2 class="title-label">Top 5 most liked posts in the last 7 days:</h2>
         </div>
-        <div v-for="(post, index) in top5Last7Days" :key="post.id" class="post-card2">
+        <div v-for="(post, index) in sortedTop5Last7Days" :key="post.id" class="post-card2">
           <div class="post-number">🏆{{ index + 1 }}</div>
           <div class="post-date">{{ formatDate(post.createdAt) }}</div>
           <div class="post-header">
@@ -39,8 +39,22 @@
             </div>
             <div class="post-actions">
               <span class="action-icon">👍 {{ post.likesCount }}</span>
-              <span @click="viewComments(post.id)" class="action-icon">💬 {{ post.comments?.length || 0 }}</span>
+              <span @click="viewComments(post.id)" class="action-icon-click">💬 {{ post.comments?.length || 0 }}</span>
             </div>
+
+                     <div v-if="commentsVisible[post.id]" class="comments-section">
+  <div v-if="post.comments && post.comments.length > 0">
+    <div v-for="comment in post.comments" :key="comment.id" class="comment">
+      <strong>{{ usernames[comment.userId] }}:</strong> {{ comment.text }}
+      <br/>
+      <small>{{ formatDate(comment.createdAt) }}</small>
+    </div>
+  </div>
+  <div v-else>
+    <em>No comments yet.</em>
+  </div>
+</div>
+
           </div>
         </div>
       </div>
@@ -50,7 +64,7 @@
         <h2 class="title-label">Top 10 most liked posts of all time:</h2>
         </div>
         <div class="posts-list1">
-          <div v-for="(post, index) in top10AllTime" :key="post.id" class="post-card1">
+          <div v-for="(post, index) in sortedTop10AllTime" :key="post.id" class="post-card1">
             <div class="post-number">🏆{{ index + 1 }}</div>
             <div class="post-date">{{ formatDate(post.createdAt) }}</div>
             <div class="post-header">
@@ -62,16 +76,29 @@
               </div>
               <div class="post-actions">
                 <span class="action-icon">👍 {{ post.likesCount }}</span>
-                <span @click="viewComments(post.id)" class="action-icon">💬 {{ post.comments?.length || 0 }}</span>
+                <span @click="viewComments10(post.id)" class="action-icon-click">💬 {{ post.comments?.length || 0 }}</span>
               </div>
+              <div v-if="commentsVisible10[post.id]" class="comments-section">
+  <div v-if="post.comments && post.comments.length > 0">
+    <div v-for="comment in post.comments" :key="comment.id" class="comment">
+      <strong>{{ usernames[comment.userId] }}:</strong> {{ comment.text }}
+      <br/>
+      <small>{{ formatDate(comment.createdAt) }}</small>
+    </div>
+  </div>
+  <div v-else>
+    <em>No comments yet.</em>
+  </div>
+</div>
+
             </div>
           </div>
         </div>
       </div>
     </div>
 
-    <div class="top-users">
-  <h2>Top Users with Most Likes:</h2>
+    <div class="top-users" v-if="totalPosts > 0">
+  <h2 class="title-label">Top Users with Most Likes:</h2>
   <div class="user-list">
     <div v-for="(user, index) in topUsers" :key="user.id" class="user-card1">
       <div class="user-rank">#{{ index + 1 }}</div>
@@ -88,7 +115,7 @@
   
   <script>
   import axios from "axios";
-  import { ref, onMounted } from "vue";
+  import { ref, onMounted, computed , reactive} from "vue";
   import { useRouter } from "vue-router";
   import Swal from 'sweetalert2';
 
@@ -101,7 +128,32 @@
       const top5Last7Days = ref([]);
       const top10AllTime = ref([]);
       const topUsers = ref([]);
-  
+       const usernames = reactive({});
+         const commentsVisible = reactive({});
+          const commentsVisible10 = reactive({});
+
+    const viewComments = (postId) => {
+      commentsVisible[postId] = !commentsVisible[postId]; // Prikazivanje/sakrivanje komentara
+    };
+     const viewComments10 = (postId) => {
+      commentsVisible10[postId] = !commentsVisible10[postId]; // Prikazivanje/sakrivanje komentara
+    };
+       const fetchUsername = async (userId) => {
+
+       if (usernames[userId]) {
+        // Ako već postoji u mapi, vraćamo odmah (nije async)
+        return usernames[userId];
+      }
+      try {
+        const response = await axios.get(`http://localhost:8080/api/getOneUser/${userId}`);
+        usernames[userId] = response.data.username;  // dodaj u mapu
+        console.log(usernames[userId])
+        return usernames[userId];
+      } catch (error) {
+        usernames[userId] = 'nepoznat';
+        return 'nepoznat';
+      }
+}   
 
     const fetchTrends = async () => {
   try {
@@ -126,7 +178,7 @@
 
     totalPosts.value = response.data.totalPosts;
     postsLast30Days.value = response.data.postsLast30Days;
-    const processedTop5 = await Promise.all(
+   /* const processedTop5 = await Promise.all(
       response.data.top5Last7Days.map(async post => ({
         ...post,
         imagePath: `http://localhost:8080/images/${post.imagePath}`,
@@ -135,9 +187,26 @@
 
       }))
     );
-    top5Last7Days.value = processedTop5;
+    top5Last7Days.value = processedTop5;*/
+    const processedTop5 = await Promise.all(
+  response.data.top5Last7Days.map(async post => {
+    // Za svaki komentar u postu, pozovi fetchUsername i napuni mapu
+    if (post.comments && post.comments.length > 0) {
+      await Promise.all(post.comments.map(comment => fetchUsername(comment.userId)));
+    }
 
-    const processedTop10 = await Promise.all(
+    return {
+      ...post,
+      imagePath: `http://localhost:8080/images/${post.imagePath}`,
+      likesCount: await fetchLikesCount(post.id),
+      comments: post.comments || [],
+    };
+  })
+);
+top5Last7Days.value = processedTop5;
+
+
+    /*const processedTop10 = await Promise.all(
       response.data.top10AllTime.map(async post => ({
         ...post,
         imagePath: `http://localhost:8080/images/${post.imagePath}`,
@@ -145,7 +214,25 @@
         comments: []
       }))
     );
-    top10AllTime.value= processedTop10;
+   top10AllTime.value= processedTop10;*/
+   const processedTop10 = await Promise.all(
+  response.data.top10AllTime.map(async post => {
+    // Za svaki komentar u postu, pozovi fetchUsername i napuni mapu
+    if (post.comments && post.comments.length > 0) {
+      await Promise.all(post.comments.map(comment => fetchUsername(comment.userId)));
+    }
+
+    return {
+      ...post,
+      imagePath: `http://localhost:8080/images/${post.imagePath}`,
+      likesCount: await fetchLikesCount(post.id),
+      comments: post.comments || [],
+    };
+  })
+);
+top10AllTime.value = processedTop10;
+
+  
 
 
     const userIds = await axios.get('http://localhost:8080/api/top-users', {
@@ -167,6 +254,14 @@ topUsers.value = users;
     console.error('Error fetching trends data:', error);
     alert('Failed to fetch trends data.');
   }
+
+  console.log({
+  totalPosts: totalPosts.value,
+  postsLast30Days: postsLast30Days.value,
+  top5Last7Days: top5Last7Days.value,
+  top10AllTime: top10AllTime.value,
+  topUsers: topUsers.value
+});
 };
 
 
@@ -193,6 +288,14 @@ topUsers.value = users;
       onMounted(() => {
         fetchTrends();
       });
+      const sortedTop10AllTime = computed(() =>
+  top10AllTime.value.slice().sort((a, b) => b.likesCount - a.likesCount)
+);
+
+const sortedTop5Last7Days = computed(() =>
+  top5Last7Days.value.slice().sort((a, b) => b.likesCount - a.likesCount)
+);
+
   
       return {
         totalPosts,
@@ -201,7 +304,14 @@ topUsers.value = users;
         top10AllTime,
         topUsers,
         goBackToHome,
-        formatDate
+        formatDate,
+        sortedTop10AllTime ,
+        sortedTop5Last7Days,
+        usernames,
+        viewComments,
+       commentsVisible,
+        viewComments10,
+       commentsVisible10
       };
     },
   };
@@ -387,6 +497,9 @@ topUsers.value = users;
   font-size: 16px;
   color: #555;
   margin: 5px 0;
+}
+.action-icon-click{
+  cursor: pointer;
 }
 
 .title-item {

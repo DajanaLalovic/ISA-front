@@ -30,7 +30,7 @@
 
         <div class="profile-item">
         
-        <button @click="showChangePassword" class="change-password-btn">
+        <button @click="showChangePassword" v-if="currentUserId == user.id" class="change-password-btn">
           Change Password
         </button>
       </div>
@@ -166,9 +166,36 @@
         </div>
         <div class="post-actions">
           <span  class="action-icon">👍  {{ post.likesCount }}</span>
-           <span @click="viewComments(post.id)" class="action-icon">💬 {{ post.comments?.length || 0 }}</span> 
+           <span @click="viewComments(post.id)" class="action-icon-click">💬 {{ post.comments?.length || 0 }}</span> 
         </div>
         
+        <!-- <div v-if="commentsVisible[post.id]" class="comments-section">
+  <div v-if="post.comments && post.comments.length > 0">
+    <div v-for="comment in post.comments" :key="comment.id" class="comment">
+      <strong>User {{ comment.userId }}:</strong> {{ comment.text }}
+      <br/>
+      <small>{{ formatDate(comment.createdAt) }}</small>
+    </div>
+  </div>
+  <div v-else>
+    <em>No comments yet.</em>
+  </div>
+</div>"commentsVisible.value[post.id]" -->
+<div v-if="commentsVisible[post.id]" class="comments-section">
+  <div v-if="post.comments && post.comments.length > 0">
+    <div v-for="comment in post.comments" :key="comment.id" class="comment">
+      <strong>{{ usernames[comment.userId] }}:</strong> {{ comment.text }}
+      <br/>
+      <small>{{ formatDate(comment.createdAt) }}</small>
+    </div>
+  </div>
+  <div v-else>
+    <em>No comments yet.</em>
+  </div>
+</div>
+
+
+
       </div>
 
    
@@ -181,7 +208,7 @@
 
 <script>
 import axios from "axios";
-import { ref, computed,onMounted } from "vue";
+import { ref, computed,onMounted , reactive} from "vue";
 import { useRoute } from "vue-router";
 import { useRouter } from 'vue-router';
 import Swal from 'sweetalert2';
@@ -200,20 +227,39 @@ export default {
     const isChangingPassword = ref(false);
     const confirmPasswordError = ref(false);
     const menuOpen = ref({}); // Za praćenje stanja menija za svaki post
-    const commentsVisible = ref({}); // Za praćenje komentara po postu
+    const commentsVisible = reactive({});
+ // Za praćenje komentara po postu
     const posts = ref([]); // Dodajemo ovu varijablu za postove
     const myPosts = ref([]);
     const isAuthen = !!localStorage.getItem('authToken'); // Proveravamo da li je korisnik ulogovan
     const followers = ref([]);
     const following = ref([]);
     const profileUserId =  ref(0);
+    const usernames = reactive({}); 
 
     const maskedPassword = computed(() => {
    return user.value && user.value.password
     ? '*'.repeat(user.value.password.length)
     : '';
     });
+   // const usernames = reactive({});
+   // const fetchUsername = (userId) => {
+   const fetchUsername = async (userId) => {
 
+       if (usernames[userId]) {
+        // Ako već postoji u mapi, vraćamo odmah (nije async)
+        return usernames[userId];
+      }
+      try {
+        const response = await axios.get(`http://localhost:8080/api/getOneUser/${userId}`);
+        usernames[userId] = response.data.username;  // dodaj u mapu
+        console.log(usernames[userId])
+        return usernames[userId];
+      } catch (error) {
+        usernames[userId] = 'nepoznat';
+        return 'nepoznat';
+      }
+}   
 
     const showChangePassword = () => {
       isChangingPassword.value = true;
@@ -410,15 +456,28 @@ const fetchPosts = async () => {
         const processedPosts = await Promise.all(
           response.data
             .filter(post => !post.isRemoved && post.userId === user.value.id) 
-            .map(async post => ({
-              ...post,
-              imagePath: `http://localhost:8080/images/${post.imagePath}`,
-              likesCount: await fetchLikesCount(post.id),
-              comments: post.comments || [],
-            }))
+            // .map(async post => ({
+            //   ...post,
+            //   imagePath: `http://localhost:8080/images/${post.imagePath}`,
+            //   likesCount: await fetchLikesCount(post.id),
+            //   comments: post.comments || [],
+            // }))
+             .map(async post => {
+          // Za svaki komentar u postu, pozovi fetchUsername i napuni mapu
+          if (post.comments && post.comments.length > 0) {
+            await Promise.all(post.comments.map(comment => fetchUsername(comment.userId)));
+          }
+          return {
+            ...post,
+            imagePath: `http://localhost:8080/images/${post.imagePath}`,
+            likesCount: await fetchLikesCount(post.id),
+            comments: post.comments || [],
+          };
+        })
         );
         
         posts.value = processedPosts.sort((a, b) => new Date(b.createdAt) - new Date(a.createdAt));
+       // const username = this.fetchUsername(post.comme)
         myPosts.value = posts.value;
         
       } catch (error) {
@@ -513,7 +572,7 @@ const toggleMenu = (postId) => {
       }
     };
     const viewComments = (postId) => {
-      commentsVisible.value[postId] = !commentsVisible.value[postId]; // Prikazivanje/sakrivanje komentara
+      commentsVisible[postId] = !commentsVisible[postId]; // Prikazivanje/sakrivanje komentara
     };
 
     
@@ -589,7 +648,10 @@ const toggleMenu = (postId) => {
       isAuthen,
       following,
       followers,
-      profileUserId
+      profileUserId,
+      commentsVisible,
+      fetchUsername,
+      usernames
     };
   },
 };
@@ -863,6 +925,7 @@ h1 {
   align-items: center;
 }
 
+
 .follow-button,
 .unfollow-button,
 .return-button {
@@ -913,9 +976,14 @@ h1 {
 }
 
 .connections-list {
-  display: grid;
+  display: flex;
+  flex-direction: column;
   grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
   gap: 15px;
+  max-height: 250px;
+  overflow-y: auto;
+   scrollbar-width: thin;         /* Za Firefox */
+  scrollbar-color: #ff9f43 transparent;  
 }
 
 .user-card {
@@ -989,5 +1057,7 @@ h1 {
   border-bottom: none;
 }
 
-
+.action-icon-click{
+  cursor: pointer;
+}
 </style>
