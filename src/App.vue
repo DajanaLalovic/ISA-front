@@ -8,15 +8,22 @@
 
 <script>
 export default {
-  name: 'App'
-  /*mounted() {
-    document.addEventListener('visibilitychange', () => {
-      if (document.visibilityState === 'hidden') {
-        localStorage.removeItem('authToken');
-        localStorage.removeItem('isLoggedIn');
-      }
-    });
-  }*/
+  name: 'App',
+  
+   mounted() {
+    if (!sessionStorage.getItem('appInitialized')) {
+      // Tvoj kod koji treba da se izvrši samo prvi put
+      localStorage.removeItem('authToken');
+      localStorage.removeItem('isLoggedIn');
+      localStorage.removeItem('userId');
+      console.log('LocalStorage resetovan na Login stranici');
+      console.log('Komponenta je učitana prvi put.');
+
+      // Obeleži da je već inicijalizovano
+      sessionStorage.setItem('appInitialized', 'true');
+    }
+  }
+
 }
 
 /*window.addEventListener('beforeunload', () => {
