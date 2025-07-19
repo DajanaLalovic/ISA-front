@@ -27,7 +27,7 @@
           </div>
           <p>{{ post.description }}</p>
           <div>
-            <button v-if="isAdmin" @click="approveAd(post.id)" class="approve-button">
+            <button v-if="isAdmin && !approvedAds[post.id]" @click="approveAd(post.id)" class="approve-button">
               Approve for Ad
             </button>
           </div>
@@ -80,6 +80,7 @@ export default {
     const userRole = ref(null);
     const isAdmin = ref(false);
     const postComments = ref({});
+    const approvedAds = ref({});
 
     onMounted(() => {
       fetchPosts();
@@ -330,8 +331,14 @@ export default {
             'Authorization': `Bearer ${token}`
           }
         });
-
-        alert("Post approved for advertisement successfully!");
+        approvedAds.value[postId] = true;
+        Swal.fire({
+          icon: 'success',
+          title: 'Success',
+          text: 'Post approved for advertisement successfully!',
+          showConfirmButton: false,
+          timer: 2000
+        });
       } catch (error) {
         console.error("Error approving post:", error);
         alert("Failed to approve post for advertisement.");
@@ -385,7 +392,8 @@ export default {
       imageCache,
       approveAd,
       isAdmin,
-      postComments
+      postComments,
+      approvedAds
     };
   }
 
@@ -521,6 +529,15 @@ export default {
   border-radius: 8px;
   border-color: #007bff;
   color: #f0f0f0;
+}
+
+.approve-button {
+  margin-top: 10px;
+  background-color: #007bff;
+  border-radius: 8px;
+  border-color: #007bff;
+  color: #f0f0f0;
+
 }
 
 .post-date {
