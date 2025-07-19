@@ -20,7 +20,7 @@
       <div class="hero-text">
         <h1>Post your bun and have fun!</h1>
         <p>OnlyBuns helps you follow and post pictures, comments, and posts...enjoy</p>
-        <button class="cta-button" @click="navigateToSignUp">Sign up for free</button>
+        <button class="cta-button" v-if="!isLoggedIn"  @click="navigateToSignUp">Sign up for free</button>
       </div>
       <div class="hero-image">
         <img src="@/assets/slatkis.jpg" alt="Hero Image" />
@@ -29,9 +29,9 @@
     <div class="links-container">
       <router-link to="/trends" class="link"  v-if="isLoggedIn">Trends Dashboard</router-link>
       <router-link to="/analytics" class="link"  v-if="isAdmin">Application Analytics</router-link>
-      <router-link to="/chat" class="link" v-if="isUser">User Chat</router-link> <!--samo user    v-if="isLoggedIn"-->
-      <router-link to="/nearPosts" class="link" v-if="isUser">Posts from followers</router-link><!--samo user    v-if="isLoggedIn"-->
-      <router-link to="/followedPosts" class="link" v-if="isUser">Followed Posts</router-link><!--samo user   v-if="isLoggedIn"-->
+      <router-link to="/chat" class="link" v-if="isUser && isLoggedIn">User Chat</router-link> <!--samo user    v-if="isLoggedIn"-->
+      <router-link to="/nearPosts" class="link" v-if="isUser && isLoggedIn">Posts from followers</router-link><!--samo user    v-if="isLoggedIn"-->
+      <router-link to="/followedPosts" class="link" v-if="isUser && isLoggedIn">Followed Posts</router-link><!--samo user   v-if="isLoggedIn"-->
 
 
     </div>

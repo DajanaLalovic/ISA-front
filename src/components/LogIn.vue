@@ -1,4 +1,6 @@
 <template>
+  <div class="global">
+  <img src="@/style/LOGIN.png" alt="Bunny Image" class="bunny-image" />
     <div class="content">
       <div class="login-card">
         <h2>{{ title }}</h2>
@@ -32,6 +34,7 @@
         </p>
       </div>
     </div>
+  </div>
   </template>
   
   <script>
@@ -53,6 +56,13 @@
       });
       const userId = ref(null);
       onMounted(() => {
+         // Ovde resetujemo samo kada se učita Login stranica
+  localStorage.removeItem('authToken');
+  localStorage.removeItem('isLoggedIn');
+  localStorage.removeItem('userId');
+  console.log('LocalStorage resetovan na Login stranici');
+
+
       if (localStorage.getItem('isLoggedIn') === 'true') {
         router.push('/'); // Preusmeravanje ako je korisnik već prijavljen
       }
@@ -152,9 +162,17 @@
   </script>
   
   <style scoped>
+  .global{
+    height: 100vh;
+    position: relative;
+    background:#F0E7D0;
+  }
+
   .content {
+    position: absolute;
+    top:100px;
+    left: 600px;
     max-width: 400px;
-    margin: 0 auto;
     padding: 20px;
     border: 1px solid #ccc;
     border-radius: 8px;
@@ -186,15 +204,31 @@
     border: 1px solid #ccc;
     border-radius: 4px;
   }
+  .bunny-image {
+    position: absolute;
+    top: 100px;
+    left: 40px;
+    width: 400px;
+    height: 550px;
+    z-index: 1;
+  }
+
   
   button {
     padding: 10px 20px;
     margin-right: 10px;
-    cursor: pointer;
-    background-color: #007bff;
-    color: #fff;
-    border: none;
-    border-radius: 4px;
+    background-color: #ff9f43;
+  color: #fff;
+  border: none;
+  padding: 10px 20px;
+  border-radius: 20px;
+  font-size: 14px;
+  font-weight: bold;
+  cursor: pointer;
+  transition: #ff9f43 0.3s ease;
+  }
+  button:hover{
+    background-color: #f19c4d;
   }
   
   button:disabled {
