@@ -232,7 +232,10 @@ export default {
         const response = await axios.get("http://localhost:8080/api/all", {
           headers: { Authorization: `Bearer ${token}` },
         });
-        users.value = response.data;
+        users.value = response.data.filter((user) => user.role !== "ADMIN");
+
+        // users.value = response.data;
+        console.log("Svi korisnici:", response.data);
       } catch (error) {
         console.error("Error fetching users:", error);
       }
@@ -585,7 +588,12 @@ export default {
     const toggleAddUsers = () => {
       showAddUsers.value = !showAddUsers.value;
       showRemoveUsers.value = false;
-      usersToAdd.value = [];
+      // usersToAdd.value = [];
+      usersToAdd.value = users.value.filter(
+        (user) =>
+          user.role?.toUpperCase() !== "ADMIN" &&
+          !groupMembers.value.some((member) => member.id === user.id)
+      );
     };
 
     const toggleRemoveUsers = () => {

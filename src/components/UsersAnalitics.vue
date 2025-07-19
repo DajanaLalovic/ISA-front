@@ -47,7 +47,7 @@
 <script>
 import axios from "axios";
 import { ref, onMounted, nextTick } from "vue";
-import { useRouter } from 'vue-router';
+import { useRouter } from "vue-router";
 import Chart from "chart.js/auto";
 
 export default {
@@ -57,7 +57,7 @@ export default {
     const loading = ref(true);
     const error = ref(null);
     const chart = ref(null);
-    const chartReady = ref(false); 
+    const chartReady = ref(false);
     const router = useRouter();
 
     const fetchAnalytics = async () => {
@@ -79,7 +79,7 @@ export default {
           }
         );
         analytics.value = analyticsResponse.data;
-      //statistika aktivnosit korisnika
+        //statistika aktivnosit korisnika
         const statisticsResponse = await axios.get(
           "http://localhost:8080/api/analytics/statistics",
           {
@@ -94,8 +94,9 @@ export default {
         console.log("Statistics response:", statisticsResponse.data);
 
         setTimeout(() => {
-  createRadialChart(statisticsResponse.data);
-}, 100);       } catch (err) {
+          createRadialChart(statisticsResponse.data);
+        }, 100);
+      } catch (err) {
         console.error("Error fetching analytics:", err);
         if (err.response && err.response.status === 403) {
           error.value = "You do not have permission to view analytics.";
@@ -118,25 +119,25 @@ export default {
       }
 
       if (chart.value) {
-        chart.value.destroy(); 
+        chart.value.destroy();
       }
 
       chart.value = new Chart(ctx, {
-        type: "radar", 
+        type: "radar",
         data: {
-          labels: ["Posted", "Commented", "No Activity"], 
+          labels: ["Posted", "Commented", "No Activity"],
           datasets: [
             {
-              label: "User Participation (%)", 
+              label: "User Participation (%)",
               data: [
                 data.usersWithPosts || 0,
-                data.usersWithComments || 0,
+                data.usersWithOnlyComments || 0,
                 data.usersWithoutActivity || 0,
               ],
               backgroundColor: "rgba(54, 162, 235, 0.2)",
-              borderColor: "rgba(54, 162, 235, 1)", 
-              pointBackgroundColor: "rgba(54, 162, 235, 1)", 
-              borderWidth: 2, 
+              borderColor: "rgba(54, 162, 235, 1)",
+              pointBackgroundColor: "rgba(54, 162, 235, 1)",
+              borderWidth: 2,
             },
           ],
         },
@@ -173,7 +174,7 @@ export default {
       });
     };
     const goBackToHome = () => {
-        router.push("/");
+      router.push("/");
     };
     onMounted(fetchAnalytics);
 
@@ -182,7 +183,7 @@ export default {
       loading,
       error,
       chartReady,
-      goBackToHome
+      goBackToHome,
     };
   },
 };
@@ -191,7 +192,7 @@ export default {
 <style scoped>
 .analytics-container {
   padding: 100px;
-  background-color: #fff8e1; 
+  background-color: #fff8e1;
   display: flex;
   flex-direction: column;
   align-items: center;
@@ -202,7 +203,7 @@ export default {
   display: inline-block;
   margin-bottom: 20px;
   padding: 10px 20px;
-  background-color: #f5deb3; 
+  background-color: #f5deb3;
   color: #333;
   font-size: 16px;
   font-weight: bold;
@@ -214,7 +215,7 @@ export default {
 }
 
 .return-button:hover {
-  background-color: #e6c79c; 
+  background-color: #e6c79c;
 }
 
 .analytics-content {
@@ -231,12 +232,11 @@ export default {
   min-width: 300px;
   padding: 20px;
   background-color: #fff;
-  border: 1px solid #ffb347; 
+  border: 1px solid #ffb347;
   border-radius: 15px;
-  box-shadow: 0 6px 12px rgba(0, 0, 0, 0.1); 
+  box-shadow: 0 6px 12px rgba(0, 0, 0, 0.1);
   margin-right: 20px;
-  height: 100%; 
-
+  height: 100%;
 }
 
 .stats-box h2 {
@@ -245,7 +245,6 @@ export default {
   margin-bottom: 30px;
   margin-top: 30px;
   text-align: center;
-  
 }
 
 .stats-box ul {
@@ -259,7 +258,7 @@ export default {
   margin-bottom: 10px;
   display: flex;
   justify-content: center;
-  gap: 10px; 
+  gap: 10px;
   align-items: center;
 }
 
@@ -279,7 +278,7 @@ export default {
   min-width: 350px;
   padding: 20px;
   background-color: #fff;
-  border: 1px solid #ffb347; 
+  border: 1px solid #ffb347;
   border-radius: 15px;
   box-shadow: 0 6px 12px rgba(0, 0, 0, 0.1);
   display: flex;
@@ -301,8 +300,8 @@ canvas {
   margin-top: 10px;
 }
 .background-wrapper {
-  background-color: #f5f5dc; 
-  padding: 40px 0; 
+  background-color: #f5f5dc;
+  padding: 40px 0;
   display: flex;
   justify-content: center;
 }
