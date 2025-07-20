@@ -307,6 +307,7 @@ export default {
 };
 watch(() => form.value.username, checkUsername);
 
+
     const isFormValid = computed(() => {
       return (
         isUsernameValid.value &&
@@ -330,20 +331,7 @@ watch(() => form.value.username, checkUsername);
 
     const onSubmit = async () => {
       errorMessages.value = []; // Reset error messages
-      // if (!isFormValid.value) {
-      //   // Add error messages for invalid fields
-      //   if (!isUsernameValid.value) errorMessages.value.push('Username must be 3-64 characters.');
-      //   if (!isPasswordValid.value) errorMessages.value.push('Password must be 3-32 characters.');
-      //   if (form.value.confirmPassword !== form.value.password) errorMessages.value.push('Passwords do not match.');
-      //   if (!isEmailValid.value) errorMessages.value.push('Invalid email format.');
-      //   if (!isNumberValid.value) errorMessages.value.push('Number must be numeric.');
-      //   if (!isPostalCodeValid.value) errorMessages.value.push('Postal Code must be numeric.');
-      //   return;
-      // }
-    
-
-     // notification.value = null;
-     // submitted.value = true;
+   
 
 
 
@@ -383,27 +371,7 @@ watch(() => form.value.username, checkUsername);
       }
     };
 
-   
 
-  /*const validateAddress = async () => {
-  const fullAddress = `${form.value.street} ${form.value.number}, ${form.value.city}, ${form.value.postalCode}, ${form.value.country}`;
-  const url = `https://nominatim.openstreetmap.org/search?format=json&q=${encodeURIComponent(fullAddress)}`;
-
-    try {
-      const response = await axios.get(url);
-      if (response.data && response.data.length > 0) {
-        addressError.value = ""; // validna adresa
-        return true;
-      } else {
-        addressError.value = "Address not found. Please check it again.";
-        return false;
-      }
-    } catch (error) {
-      console.error("Address validation error:", error);
-      addressError.value = "Address validation failed. Try again later.";
-      return false;
-    }
-  };*/
   const validateAddress = async () => {
   const fullAddress = `${form.value.street} ${form.value.number}, ${form.value.city}, ${form.value.postalCode}, ${form.value.country}`;
   const url = `https://nominatim.openstreetmap.org/search?format=json&q=${encodeURIComponent(fullAddress)}`;
@@ -413,7 +381,9 @@ watch(() => form.value.username, checkUsername);
     if (response.data && response.data.length > 0) {
       addressError.value = ""; // Validna adresa
       isAddressValid.value = true;
+      console.log('uspela');
     } else {
+      console.log('nije dobra');
       addressError.value = "Address not found. Please check it again.";
       isAddressValid.value = false;
     }
