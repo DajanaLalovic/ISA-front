@@ -8,7 +8,7 @@
     <div class="profile-info">
       <div class="profile-item">
         <strong>First Name:</strong>  <button @click="openEditModal" v-if="currentUserId == user.id" class="edit-btn">✏️</button><span>{{ user.name }}</span>
-        
+      
       </div>
       <div class="profile-item">
         <strong>Last Name:</strong> 
