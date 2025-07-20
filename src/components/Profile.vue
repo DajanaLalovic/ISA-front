@@ -7,10 +7,13 @@
     <hr class="profile-divider" />
     <div class="profile-info">
       <div class="profile-item">
-        <strong>First Name:</strong> <span>{{ user.name }}</span>
+        <strong>First Name:</strong>  <button @click="openEditModal" v-if="currentUserId == user.id" class="edit-btn">✏️</button><span>{{ user.name }}</span>
+      
       </div>
       <div class="profile-item">
-        <strong>Last Name:</strong> <span>{{ user.surname }}</span>
+        <strong>Last Name:</strong> 
+         <button @click="openEditModal" v-if="currentUserId == user.id" class="edit-btn">✏️</button>
+         <span>{{ user.surname }}</span>
       </div>
       <div class="profile-item">
         <strong>Email:</strong> <span>{{ user.email }}</span>
@@ -19,7 +22,9 @@
         <strong>Role:</strong> <span>{{ user.role }}</span>
       </div>
       <div class="profile-item">
-        <strong>Address:</strong> <span>🏡{{user.address.street }},{{ user.address.number }} 
+        <strong>Address:</strong>
+         <button @click="openEditModal" v-if="currentUserId == user.id" class="edit-btn">✏️</button>
+        <span>🏡{{user.address.street }},{{ user.address.number }} 
             🌎{{ user.address.country }},{{  user.address.city }} 📬{{ user.address.postalCode }}</span>
       </div>
       <div class="profile-item">
@@ -66,6 +71,7 @@
     
       </div>
     </div>
+    
 
   </div>
   <div  class="profile-container-right" v-if="currentUserId === profileUserId">
@@ -204,6 +210,26 @@
 
   </div>
 
+
+
+
+
+<div v-if="showModal" class="modal-overlay">
+  <div class="modal-content">
+    <h3>Edit Profile Info</h3>
+    <input v-model="editData.name" placeholder="First Name" />
+    <input v-model="editData.surname" placeholder="Last Name" />
+    <input v-model="editData.street" placeholder="Street" />
+    <input v-model="editData.number" placeholder="Number" />
+    <input v-model="editData.city" placeholder="City" />
+    <input v-model="editData.country" placeholder="Country" />
+    <input v-model="editData.postalCode" placeholder="Postal Code" />
+    <div class="modal-buttons">
+      <button @click="submitChanges">Save</button>
+      <button @click="showModal = false">Cancel</button>
+    </div>
+  </div>
+</div>
 </template>
 
 <script>
@@ -289,6 +315,62 @@ export default {
         console.error("Error loading profile: ", error);
       }
     };
+
+    //////////////
+const showModal = ref(false);
+const editData = reactive({
+  name: '',
+  surname: '',
+  street: '',
+  number: '',
+  city: '',
+  country: '',
+  postalCode: ''
+});
+
+const openEditModal = () => {
+  console.log('openEditModal called');
+  console.log(user);
+  if (user.value) {
+    editData.name = user.value.name;
+    editData.surname = user.value.surname;
+    editData.street = user.value.address.street;
+    editData.number = user.value.address.number;
+    editData.city = user.value.address.city;
+    editData.country = user.value.address.country;
+    editData.postalCode = user.value.address.postalCode;
+    showModal.value = true;
+  }
+};
+
+const submitChanges = async () => {
+  try {
+    const token = localStorage.getItem('authToken');
+    await axios.put(`http://localhost:8080/api/updateprofile/${userId}`, {
+      name: editData.name,
+      surname: editData.surname,
+      address: {
+        street: editData.street,
+        number: editData.number,
+        city: editData.city,
+        country: editData.country,
+        postalCode: editData.postalCode
+      }
+    }, {
+      headers: { Authorization: `Bearer ${token}` }
+    });
+
+    Swal.fire('Success', 'Profile updated successfully!', 'success');
+    showModal.value = false;
+    fetchUserProfile(); // ponovo učitaj podatke
+
+  } catch (error) {
+    console.error('Update error:', error);
+    Swal.fire('Error', 'Could not update profile.', 'error');
+  }
+};
+
+    ////////////
 
     // Funkcija za Follow
     const followUser = async () => {
@@ -651,13 +733,61 @@ const toggleMenu = (postId) => {
       profileUserId,
       commentsVisible,
       fetchUsername,
-      usernames
+      usernames,
+      openEditModal,
+      submitChanges,
+      showModal,
+      editData
     };
   },
 };
 </script>
 
 <style scoped>
+.modal-overlay {
+  position: fixed;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  background-color: rgba(0,0,0,0.4);
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  z-index: 1000;
+}
+
+.modal-content {
+  background-color: #fff5e6;
+  padding: 20px;
+  border-radius: 12px;
+  width: 400px;
+  box-shadow: 0 0 10px #00000050;
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+
+.modal-content input {
+  padding: 8px;
+  border-radius: 8px;
+  border: 1px solid #ccc;
+}
+
+.modal-buttons {
+  display: flex;
+  justify-content: space-between;
+  margin-top: 10px;
+}
+
+.edit-btn {
+  margin-left: 8px;
+  background: none;
+  border: none;
+  cursor: pointer;
+  font-size: 16px;
+}
+
 .profile-container-right {
   position: fixed;
   top: 20px;
